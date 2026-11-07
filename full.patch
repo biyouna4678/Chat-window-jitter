@@ -1,0 +1,161 @@
+--- /tmp/chat-window/css/style.css	2026-11-07 06:02:03.592091486 +0000
++++ /app/applet/css/style.css	2026-11-07 06:14:43.970695175 +0000
+@@ -3,28 +3,42 @@
+ textarea::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar { display: none; }
+ textarea, .hide-scrollbar, .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+ 
+-/* 核心修复：把背景图直接钉死在 body 的固定视口上 */
+-html, body {
++/* ================= 视口与背景锁死（完美铺满物理屏幕，消灭底边） ================= */
++html {
+     margin: 0;
+     padding: 0;
+     width: 100%;
+     height: 100%;
+-    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+-    background-size: cover;
+-    background-position: center;
+-    background-repeat: no-repeat;
+-    background-attachment: fixed; /* 这行是关键，保证它死死贴在屏幕最底层 */
+-    background-color: #1a1a1a;
+     overflow: hidden;
++    background-color: #1a1a1a; /* 图片加载前的兜底 */
+ }
+ 
+ body {
++    position: fixed;
++    top: 0;
++    left: 0;
++    width: 100vw;
++    height: 100vh;
++    height: 100dvh; /* iOS 15.4+ 动态全屏视口 */
++    margin: 0;
++    padding: 0;
++    overflow: hidden;
++    /* 核心修复：移除 background-attachment: fixed，采用默认 scroll */
++    /* 因为 body 自身已为 position: fixed，默认值天然与视口同频且突破 WebKit 安全区裁剪 */
++    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
++    background-size: cover;
++    background-position: center center;
++    background-repeat: no-repeat;
++    background-color: transparent;
+     -webkit-user-select: none;
+     -moz-user-select: none;
+     -ms-user-select: none;
+     user-select: none;
+     -webkit-touch-callout: none;
+     touch-action: manipulation;
++    /* 硬件加速图层，确保背景层与根图层同频 */
++    -webkit-transform: translate3d(0, 0, 0);
++    transform: translate3d(0, 0, 0);
+ }
+ textarea, input { -webkit-user-select: text; user-select: text; }
+ 
+@@ -228,16 +242,27 @@
+ 
+ /* ================= 5. PWA 全屏无白边终极代码 ================= */
+ .pwa-root {
+-  position: fixed;
++  position: absolute;
+   top: 0; left: 0; right: 0;
+-  /* 卡在安全区上方，下方露出的部分直接由 body 铺满背景 */
+-  bottom: env(safe-area-inset-bottom, 0px); 
++  bottom: 0; /* 必须为 0，彻底拆除导致底边的人造断层 */
++  width: 100%;
++  height: 100%;
+   overflow: hidden;
+-  background-color: transparent;
++  background-color: transparent !important;
+ }
+ 
+ .pwa-top-safe {
+-  padding-top: max(16px, env(safe-area-inset-top));
++  padding-top: max(16px, env(safe-area-inset-top, 16px));
++}
++
++/* 底部安全区保护类（输入框下方悬空安全高度） */
++.pwa-bottom-safe {
++  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
++}
++
++/* 工具抽屉底部的安全区保护类 */
++.pwa-panel-bottom-safe {
++  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+ }
+ 
+ #chat-scroll {
+@@ -245,20 +270,28 @@
+   will-change: transform;
+ }
+ 
+-/* 桌面端效果：居中限制宽度 */
++/* 桌面端效果：居中限制宽度并赋予壁纸和圆角真机阴影 */
+ @media (hover: hover) and (min-width: 600px) {
+   body {
+     display: flex;
+     justify-content: center;
+-    background: #e5e7eb;
++    align-items: center;
++    background: #0f172a;
+   }
+   .pwa-root {
+-    position: fixed;
+-    top: 0; bottom: 0;
+-    left: 50%;
+-    transform: translateX(-50%);
++    position: relative;
++    top: auto; bottom: auto;
++    left: auto;
++    transform: none;
+     width: 100%;
+-    max-width: 480px;
+-    box-shadow: 0 0 40px rgba(0,0,0,0.15);
++    max-width: 420px;
++    height: 100%;
++    max-height: 890px;
++    border-radius: 44px;
++    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
++    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
++    background-size: cover;
++    background-position: center;
++    background-repeat: no-repeat;
+   }
+ }
+--- /tmp/chat-window/index.html	2026-11-07 06:02:03.592629546 +0000
++++ /app/applet/index.html	2026-11-07 06:15:17.171993941 +0000
+@@ -17,7 +17,7 @@
+     
+     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+     
+-    <link rel="stylesheet" href="./css/style.css?v=10">
++    <link rel="stylesheet" href="./css/style.css?v=11">
+     <script src="./js/chat.js?v=10"></script>
+     <script src="./js/call.js?v=10"></script>
+     <script src="./js/map.js?v=10"></script>
+@@ -166,11 +166,11 @@
+             <!-- ================= 底部输入区 ================= -->
+             <div class="shrink-0 w-full z-50 bg-transparent relative">
+                 
+-                <!-- 修复：因为 pwa-root 没到底，所以去掉 env() 的叠加，直接用 pb-4 -->
+-                <div class="px-4 pb-4">
++                <!-- 核心修复：通过 pwa-bottom-safe 让底图无缝贯穿安全区，输入框悬浮在 Home 条上方 -->
++                <div class="px-4 pwa-bottom-safe">
+                     <div class="wet-glass rounded-[26px] h-[52px] p-1 px-2 flex items-center gap-1.5 w-full shadow-lg">
+                         <button class="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"><img src="https://i.ibb.co/tTcTvwCX/731-20261005164940.png" class="w-6 h-6 object-contain"></button>
+-                        <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[15px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
++                        <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[16px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
+                         
+                         <template x-if="!hasText()">
+                             <div class="flex items-center gap-1 shrink-0">
+@@ -203,9 +203,9 @@
+                 </div>
+ 
+                 <div class="w-full overflow-hidden transition-[max-height] duration-300 ease-out transform-gpu will-change-[max-height] max-h-0" 
+-                     :class="showToolsPanel ? 'max-h-[330px]' : 'max-h-0'">
++                     :class="showToolsPanel ? 'max-h-[380px]' : 'max-h-0'">
+                     <div>
+-                        <div class="bg-[#f3f4f6] w-full rounded-t-[28px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-white/60 flex flex-col h-[330px]" @touchstart="handleTouchStart($event)" @touchend="handleTouchEnd($event)">
++                        <div class="bg-[#f3f4f6] w-full rounded-t-[28px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-white/60 flex flex-col pwa-panel-bottom-safe min-h-[330px]" @touchstart="handleTouchStart($event)" @touchend="handleTouchEnd($event)">
+                             <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
+                             <div class="flex-1 relative px-4 pt-2">
+                                 <div x-show="currentPage === 0" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">

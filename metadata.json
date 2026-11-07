@@ -1,0 +1,6 @@
+{
+  "name": "GitHub Workspace",
+  "description": "Connect, inspect, and integrate GitHub repositories and development workflows.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

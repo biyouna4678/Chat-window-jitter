@@ -1,0 +1,10 @@
+{
+  "name": "液态玻璃通讯",
+  "short_name": "液态玻璃",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a"
+}

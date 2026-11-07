@@ -1,0 +1,38 @@
+--- /tmp/chat-window/index.html	2026-11-07 06:02:03.592629546 +0000
++++ /app/applet/index.html	2026-11-07 06:15:17.171993941 +0000
+@@ -17,7 +17,7 @@
+     
+     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+     
+-    <link rel="stylesheet" href="./css/style.css?v=10">
++    <link rel="stylesheet" href="./css/style.css?v=11">
+     <script src="./js/chat.js?v=10"></script>
+     <script src="./js/call.js?v=10"></script>
+     <script src="./js/map.js?v=10"></script>
+@@ -166,11 +166,11 @@
+             <!-- ================= 底部输入区 ================= -->
+             <div class="shrink-0 w-full z-50 bg-transparent relative">
+                 
+-                <!-- 修复：因为 pwa-root 没到底，所以去掉 env() 的叠加，直接用 pb-4 -->
+-                <div class="px-4 pb-4">
++                <!-- 核心修复：通过 pwa-bottom-safe 让底图无缝贯穿安全区，输入框悬浮在 Home 条上方 -->
++                <div class="px-4 pwa-bottom-safe">
+                     <div class="wet-glass rounded-[26px] h-[52px] p-1 px-2 flex items-center gap-1.5 w-full shadow-lg">
+                         <button class="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"><img src="https://i.ibb.co/tTcTvwCX/731-20261005164940.png" class="w-6 h-6 object-contain"></button>
+-                        <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[15px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
++                        <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[16px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
+                         
+                         <template x-if="!hasText()">
+                             <div class="flex items-center gap-1 shrink-0">
+@@ -203,9 +203,9 @@
+                 </div>
+ 
+                 <div class="w-full overflow-hidden transition-[max-height] duration-300 ease-out transform-gpu will-change-[max-height] max-h-0" 
+-                     :class="showToolsPanel ? 'max-h-[330px]' : 'max-h-0'">
++                     :class="showToolsPanel ? 'max-h-[380px]' : 'max-h-0'">
+                     <div>
+-                        <div class="bg-[#f3f4f6] w-full rounded-t-[28px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-white/60 flex flex-col h-[330px]" @touchstart="handleTouchStart($event)" @touchend="handleTouchEnd($event)">
++                        <div class="bg-[#f3f4f6] w-full rounded-t-[28px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-white/60 flex flex-col pwa-panel-bottom-safe min-h-[330px]" @touchstart="handleTouchStart($event)" @touchend="handleTouchEnd($event)">
+                             <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
+                             <div class="flex-1 relative px-4 pt-2">
+                                 <div x-show="currentPage === 0" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
