@@ -1,131 +1,106 @@
 --- /tmp/chat-window/css/style.css	2026-11-07 06:02:03.592091486 +0000
-+++ /app/applet/css/style.css	2026-11-07 06:30:35.979184152 +0000
-@@ -3,28 +3,48 @@
++++ /app/applet/css/style.css	2026-11-07 07:06:18.793854712 +0000
+@@ -3,21 +3,6 @@
  textarea::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar { display: none; }
  textarea, .hide-scrollbar, .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
  
 -/* 核心修复：把背景图直接钉死在 body 的固定视口上 */
 -html, body {
-+/* ================= 视口与背景锁死（完美铺满物理屏幕，消灭底边） ================= */
-+html {
-     margin: 0;
-     padding: 0;
-     width: 100%;
-     height: 100%;
-+    min-height: 100%;
-+    overflow: hidden;
-+    /* 核心终极方案：html 是 WebKit 的 Root Canvas 画布，背景图放在 html 上，WebKit 会无条件 100% 铺满至物理屏幕最底边缘 */
-     background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-     background-size: cover;
+-    margin: 0;
+-    padding: 0;
+-    width: 100%;
+-    height: 100%;
+-    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+-    background-size: cover;
 -    background-position: center;
-+    background-position: center center;
-     background-repeat: no-repeat;
+-    background-repeat: no-repeat;
 -    background-attachment: fixed; /* 这行是关键，保证它死死贴在屏幕最底层 */
-     background-color: #1a1a1a;
+-    background-color: #1a1a1a;
 -    overflow: hidden;
- }
- 
+-}
+-
  body {
-+    position: fixed;
-+    top: 0;
-+    left: 0;
-+    right: 0;
-+    bottom: 0; /* 必须是 bottom: 0，严禁写 height: 100dvh！100dvh 在 iOS PWA 会被扣除安全区导致缩短 34px 露底 */
-+    width: 100%;
-+    height: 100%;
-+    margin: 0;
-+    padding: 0;
-+    overflow: hidden;
-+    /* 与 html 画布像素级对齐 */
-+    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-+    background-size: cover;
-+    background-position: center center;
-+    background-repeat: no-repeat;
-+    background-color: transparent;
      -webkit-user-select: none;
      -moz-user-select: none;
-     -ms-user-select: none;
-     user-select: none;
-     -webkit-touch-callout: none;
-     touch-action: manipulation;
-+    /* 硬件加速图层，确保背景层与根图层同频 */
-+    -webkit-transform: translate3d(0, 0, 0);
-+    transform: translate3d(0, 0, 0);
- }
- textarea, input { -webkit-user-select: text; user-select: text; }
+@@ -77,7 +62,7 @@
+ .sheet-content { padding: 24px 24px 30px 24px; background: #ffffff; z-index: 30; }
+ .sheet-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; letter-spacing: 1px; }
+ .input-group { margin-bottom: 14px; }
+-.input-field { width: 100%; padding: 16px 20px; font-size: 16px; color: #333333; background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 12px; outline: none; transition: border-color 0.2s; font-family: inherit; }
++.input-field { width: 100%; padding: 16px 20px; font-size: 15px; color: #333333; background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 12px; outline: none; transition: border-color 0.2s; font-family: inherit; }
+ .input-field:focus { border-color: #1a1a1a; }
+ .action-buttons { display: flex; gap: 16px; margin-top: 24px; }
+ .btn { flex: 1; padding: 16px 0; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; cursor: pointer; border: none; font-family: inherit; letter-spacing: 1px; transition: opacity 0.2s; }
+@@ -226,14 +211,52 @@
+ .state-returned .amount::after { content: ''; position: absolute; top: 50%; left: -2px; right: -2px; height: 1px; background-color: rgba(255, 255, 255, 0.7); transform: translateY(-50%); }
+ .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
  
-@@ -228,16 +248,27 @@
- 
- /* ================= 5. PWA 全屏无白边终极代码 ================= */
- .pwa-root {
--  position: fixed;
-+  position: absolute;
-   top: 0; left: 0; right: 0;
--  /* 卡在安全区上方，下方露出的部分直接由 body 铺满背景 */
--  bottom: env(safe-area-inset-bottom, 0px); 
-+  bottom: 0; /* 必须为 0，彻底拆除导致底边的人造断层 */
+-/* ================= 5. PWA 全屏无白边终极代码 ================= */
++/* ================= 5. PWA 全屏无黑边终极解决方案 ================= */
++html {
 +  width: 100%;
 +  height: 100%;
++  min-height: 100%;
++  margin: 0;
++  padding: 0;
++  overscroll-behavior: none;
++  /* 核心：html 是浏览器根画布 (Root Canvas)，将壁纸直接贴在 html 上，物理屏幕 100% 满铺，绝无任何黑边 */
++  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
++  background-size: cover;
++  background-position: center center;
++  background-repeat: no-repeat;
++  background-color: transparent !important;
++}
++
++body {
++  width: 100%;
++  height: 100%;
++  min-height: 100%;
++  margin: 0;
++  padding: 0;
++  /* 彻底去除黑灰色 body，保持完全透明透出壁纸 */
++  background: transparent !important;
++  background-color: transparent !important;
++  overflow: hidden;
++  touch-action: pan-x pan-y;
++  -webkit-text-size-adjust: 100%;
++}
++
+ .pwa-root {
+-  position: fixed;
+-  top: 0; left: 0; right: 0;
+-  /* 卡在安全区上方，下方露出的部分直接由 body 铺满背景 */
+-  bottom: env(safe-area-inset-bottom, 0px); 
++  position: absolute; /* 采用 absolute 避免 fixed 受到 iOS 视觉视口在 Home Indicator 处的硬截断 */
++  top: 0; left: 0; right: 0; bottom: 0;
++  width: 100%;
++  height: 100%;
++  min-height: 100%;
    overflow: hidden;
 -  background-color: transparent;
++  
++  /* 彻底去除兜底黑色 */
 +  background-color: transparent !important;
++
++  /* 背景图与 html 保持像素对齐，确保 .wet-glass 玻璃拟态就近采样 */
++  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
++  background-size: cover;
++  background-position: center center;
++  background-repeat: no-repeat;
  }
  
  .pwa-top-safe {
--  padding-top: max(16px, env(safe-area-inset-top));
-+  padding-top: max(16px, env(safe-area-inset-top, 16px));
-+}
-+
-+/* 底部安全区保护类（输入框下方悬空安全高度） */
-+.pwa-bottom-safe {
-+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-+}
-+
-+/* 工具抽屉底部的安全区保护类 */
-+.pwa-panel-bottom-safe {
-+  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
- }
- 
- #chat-scroll {
-@@ -245,20 +276,28 @@
+@@ -245,7 +268,7 @@
    will-change: transform;
  }
  
 -/* 桌面端效果：居中限制宽度 */
-+/* 桌面端效果：居中限制宽度并赋予壁纸和圆角真机阴影 */
++/* 使用 hover: hover 收紧判断，避免 iPad 被压成 480px */
  @media (hover: hover) and (min-width: 600px) {
    body {
      display: flex;
-     justify-content: center;
--    background: #e5e7eb;
-+    align-items: center;
-+    background: #0f172a;
-   }
-   .pwa-root {
--    position: fixed;
--    top: 0; bottom: 0;
--    left: 50%;
--    transform: translateX(-50%);
-+    position: relative;
-+    top: auto; bottom: auto;
-+    left: auto;
-+    transform: none;
-     width: 100%;
--    max-width: 480px;
--    box-shadow: 0 0 40px rgba(0,0,0,0.15);
-+    max-width: 420px;
-+    height: 100%;
-+    max-height: 890px;
-+    border-radius: 44px;
-+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
-+    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-+    background-size: cover;
-+    background-position: center;
-+    background-repeat: no-repeat;
-   }
- }
 --- /tmp/chat-window/index.html	2026-11-07 06:02:03.592629546 +0000
-+++ /app/applet/index.html	2026-11-07 06:30:54.261364456 +0000
++++ /app/applet/index.html	2026-11-07 07:06:47.814144079 +0000
 @@ -7,7 +7,6 @@
      
      <meta name="apple-mobile-web-app-capable" content="yes">
@@ -139,26 +114,93 @@
      <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
      
 -    <link rel="stylesheet" href="./css/style.css?v=10">
-+    <link rel="stylesheet" href="./css/style.css?v=12">
++    <link rel="stylesheet" href="./css/style.css?v=15">
      <script src="./js/chat.js?v=10"></script>
      <script src="./js/call.js?v=10"></script>
      <script src="./js/map.js?v=10"></script>
-@@ -166,11 +165,11 @@
+@@ -25,8 +24,8 @@
+ </head>
+ <body class="font-sans antialiased overflow-hidden">
+ 
+-    <!-- 根容器 -->
+-    <div class="pwa-root" 
++    <!-- 删掉了 bg-layer，根容器直接自带背景图 -->
++    <div class="pwa-root flex flex-col relative" 
+          x-data="{ ...chatApp(), ...callManager(), ...mapManager(), ...transferManager() }" 
+          x-init="initChat(); initCall();"
+          @beforeunload.window="stopTimer(); stopCamera(); if(recognition) recognition.stop();">
+@@ -35,7 +34,7 @@
+         <input type="file" id="native-camera-picker" accept="image/*" capture="environment" class="hidden" @change="handleImageUpload($event)">
+ 
+         <!-- ================= 1. 聊天主界面 ================= -->
+-        <div class="absolute inset-0 w-full h-full flex flex-col transition-all duration-300"
++        <div class="w-full h-full flex flex-col transition-all duration-300"
+              :class="callState !== 'idle' && !isMinimized ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'">
+             
+             <!-- 顶部固定栏 -->
+@@ -44,7 +43,7 @@
+                     <button class="p-1 ml-0 text-black hover:text-black transition-colors rounded-full hover:bg-white/20 shrink-0" @click="alert('执行返回操作')">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                     </button>
+-                    <img src="https://i.ibb.co/3mf7FgyL/IMG-6559.jpg" class="w-8 h-8 rounded-full object-cover mx-3 shrink-0 shadow-sm">
++                    <img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover mx-3 shrink-0 shadow-sm">
+                     <div class="flex-1 min-w-0 flex flex-col justify-center pl-1 pr-3">
+                         <span class="text-gray-900 font-bold text-[14px] truncate">Yosali</span>
+                         <span class="text-gray-700/80 text-[10px] mt-0.5 truncate">
+@@ -89,14 +88,14 @@
+                             <div class="flex flex-col w-fit" :class="msg.sender === 'me' ? 'items-end' : 'items-start'">
+                                 <div class="flex gap-2.5 mb-1.5" :class="msg.sender === 'me' ? 'items-center' : 'items-start'">
+                                     <template x-if="msg.sender === 'yosali'">
+-                                        <img src="https://i.ibb.co/3mf7FgyL/IMG-6559.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm mt-0.5">
++                                        <img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm mt-0.5">
+                                     </template>
+                                     <div class="flex flex-col text-[11px] text-gray-600 font-medium leading-tight" :class="msg.sender === 'me' ? 'items-end' : 'items-start'">
+                                         <span x-show="msg.sender === 'yosali'" class="text-gray-800 font-bold mb-0.5">Yosali</span>
+                                         <span x-text="msg.time"></span>
+                                     </div>
+                                     <template x-if="msg.sender === 'me'">
+-                                        <img src="https://i.ibb.co/BKtnrG9B/IMG-6557.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm bg-gray-200">
++                                        <img src="./assets/images/me.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm bg-gray-200">
+                                     </template>
+                                 </div>
+                                 <div class="border-t border-dashed border-gray-400/60 w-full mb-2.5"></div>
+@@ -164,13 +163,12 @@
+             </div>
+ 
              <!-- ================= 底部输入区 ================= -->
-             <div class="shrink-0 w-full z-50 bg-transparent relative">
+-            <div class="shrink-0 w-full z-50 bg-transparent relative">
++            <div class="shrink-0 w-full z-50 mt-auto bg-transparent relative">
                  
 -                <!-- 修复：因为 pwa-root 没到底，所以去掉 env() 的叠加，直接用 pb-4 -->
 -                <div class="px-4 pb-4">
-+                <!-- 核心修复：通过 pwa-bottom-safe 让底图无缝贯穿安全区，输入框悬浮在 Home 条上方 -->
-+                <div class="px-4 pwa-bottom-safe">
++                <div class="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
                      <div class="wet-glass rounded-[26px] h-[52px] p-1 px-2 flex items-center gap-1.5 w-full shadow-lg">
-                         <button class="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"><img src="https://i.ibb.co/tTcTvwCX/731-20261005164940.png" class="w-6 h-6 object-contain"></button>
+-                        <button class="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"><img src="https://i.ibb.co/tTcTvwCX/731-20261005164940.png" class="w-6 h-6 object-contain"></button>
 -                        <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[15px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
++                        <button class="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"><img src="./assets/images/icon-sound.png" class="w-6 h-6 object-contain"></button>
 +                        <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[16px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
                          
                          <template x-if="!hasText()">
                              <div class="flex items-center gap-1 shrink-0">
-@@ -203,9 +202,9 @@
+@@ -179,7 +177,7 @@
+                                         @touchstart.prevent
+                                         @click="showToolsPanel = !showToolsPanel" 
+                                         class="p-1 rounded-full hover:bg-white/20">
+-                                    <img src="https://i.ibb.co/LdWwXVF4/731-20261005164859.png" class="w-6 h-6 object-contain">
++                                    <img src="./assets/images/icon-face.png" class="w-6 h-6 object-contain">
+                                 </button>
+                                 
+                                 <button type="button" 
+@@ -188,7 +186,7 @@
+                                         @click="showToolsPanel = !showToolsPanel;" 
+                                         :class="{'bg-white/30': showToolsPanel}" 
+                                         class="p-1 rounded-full hover:bg-white/20 flex items-center justify-center shrink-0 w-8 h-8">
+-                                    <img src="https://i.ibb.co/WNDxx6q1/739-20261031094001.png" class="w-7 h-7 object-contain scale-125">
++                                    <img src="./assets/images/icon-plus.png" class="w-7 h-7 object-contain scale-125">
+                                 </button>
+                             </div>
+                         </template>
+@@ -203,9 +201,9 @@
                  </div>
  
                  <div class="w-full overflow-hidden transition-[max-height] duration-300 ease-out transform-gpu will-change-[max-height] max-h-0" 
@@ -170,3 +212,76 @@
                              <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
                              <div class="flex-1 relative px-4 pt-2">
                                  <div x-show="currentPage === 0" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
+@@ -332,7 +330,7 @@
+             <div class="flex flex-col items-center justify-center flex-1 w-full mt-2 relative z-10 pointer-events-none">
+                 <div class="relative flex items-center justify-center w-56 h-56 mb-6 shrink-0 pointer-events-auto">
+                     <div class="relative rounded-full border-[3px] border-gray-400/50 shadow-2xl z-10 overflow-hidden" :class="callState === 'receiving' ? 'w-36 h-36' : 'w-28 h-28'">
+-                        <img src="https://i.ibb.co/3mf7FgyL/IMG-6559.jpg" class="w-full h-full object-cover">
++                        <img src="./assets/images/yosali.jpg" class="w-full h-full object-cover">
+                     </div>
+                     <div class="absolute pointer-events-none z-0" :class="callState === 'receiving' ? 'w-36 h-36' : 'w-28 h-28'">
+                         <div class="ripple-ring" :class="callState === 'active' ? 'ripple-active' : ''" style="animation-delay: 0s;"></div>
+@@ -384,7 +382,7 @@
+ 
+         <!-- ================= 视频通话 ================= -->
+         <div x-show="callType === 'video' && callState !== 'idle' && !isMinimized" x-transition.opacity class="fixed inset-0 z-[100] flex flex-col justify-between pt-12 pb-8 px-4 bg-[#121212] overflow-hidden" style="display: none;">
+-            <div class="absolute inset-0 z-0 bg-cover bg-center transition-opacity duration-500" :class="callState === 'active' ? 'opacity-100' : 'opacity-0'" style="background-image: url('https://i.ibb.co/1G5BT8Kg/IMG-9202.jpg');"></div>
++            <div class="absolute inset-0 z-0 bg-cover bg-center transition-opacity duration-500" :class="callState === 'active' ? 'opacity-100' : 'opacity-0'" style="background-image: url('./assets/images/video-bg.jpg');"></div>
+             <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none z-0" :class="callState === 'active' ? 'opacity-100' : 'opacity-0'"></div>
+             <div class="relative z-10 flex justify-between items-center w-full shrink-0 h-12">
+                 <button @click="toggleMinimize()" class="w-12 h-12 rounded-full dark-glass flex items-center justify-center text-white z-20">
+@@ -397,15 +395,15 @@
+                 <div class="relative w-full h-full bg-[#1a1a1a] flex items-center justify-center">
+                     <video x-show="cameraOn" x-ref="videoElement" autoplay playsinline muted class="w-full h-full object-cover transform" :class="isFrontCamera ? 'scale-x-[-1]' : ''"></video>
+                     <div x-show="!cameraOn" class="absolute inset-0 w-full h-full flex items-center justify-center">
+-                        <img src="https://i.ibb.co/BKtnrG9B/IMG-6557.jpg" class="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-125">
+-                        <img src="https://i.ibb.co/BKtnrG9B/IMG-6557.jpg" class="relative w-14 h-14 rounded-lg object-cover z-10">
++                        <img src="./assets/images/me.jpg" class="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-125">
++                        <img src="./assets/images/me.jpg" class="relative w-14 h-14 rounded-lg object-cover z-10">
+                     </div>
+                 </div>
+             </div>
+             <div class="relative z-10 flex-1 w-full flex flex-col overflow-hidden pointer-events-none mt-0 mb-4">
+                 <div x-show="callState === 'calling' || callState === 'receiving'" class="flex flex-col items-center justify-center h-full gap-4 -translate-y-12 pointer-events-auto">
+                     <div class="w-32 h-32 rounded-[32px] overflow-hidden shadow-2xl border-2 border-white/10 relative">
+-                        <img src="https://i.ibb.co/3mf7FgyL/IMG-6559.jpg" class="w-full h-full object-cover">
++                        <img src="./assets/images/yosali.jpg" class="w-full h-full object-cover">
+                         <div class="absolute inset-0 bg-black/10 animate-pulse"></div>
+                     </div>
+                     <h1 class="text-white text-2xl font-bold tracking-widest mt-2">Yosali</h1>
+@@ -519,12 +517,12 @@
+              <div class="absolute top-2.5 left-2.5 w-2.5 h-2.5 rounded-full bg-blue-500 border border-white/50 animate-bounce shadow-sm z-20" x-show="callState === 'calling'"></div>
+              <div class="w-[56px] h-[56px] rounded-[14px] overflow-hidden shadow-sm border border-white/50 mb-1.5 pointer-events-none relative z-10 bg-gray-800">
+                  <template x-if="callType === 'voice' || (callType === 'video' && callState !== 'active')">
+-                     <img src="https://i.ibb.co/3mf7FgyL/IMG-6559.jpg" class="w-full h-full object-cover">
++                     <img src="./assets/images/yosali.jpg" class="w-full h-full object-cover">
+                  </template>
+                  <template x-if="callType === 'video' && callState === 'active'">
+                      <div class="relative w-full h-full">
+                          <video x-show="cameraOn" x-ref="pipVideoElement" autoplay playsinline muted class="w-full h-full object-cover transform" :class="isFrontCamera ? 'scale-x-[-1]' : ''"></video>
+-                         <img x-show="!cameraOn" src="https://i.ibb.co/BKtnrG9B/IMG-6557.jpg" class="absolute inset-0 w-full h-full object-cover">
++                         <img x-show="!cameraOn" src="./assets/images/me.jpg" class="absolute inset-0 w-full h-full object-cover">
+                      </div>
+                  </template>
+              </div>
+@@ -719,6 +717,20 @@
+     </div>
+ 
+     <script>
++      // 彻底禁用 iOS Safari 双指缩放、手势缩放与快速双击放大
++      document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
++      document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
++      document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
++      window.addEventListener('touchmove', function(e) {
++        if (e.scale && e.scale !== 1) e.preventDefault();
++      }, { passive: false });
++      let lastTouch = 0;
++      document.addEventListener('touchend', function(e) {
++        const now = Date.now();
++        if (now - lastTouch <= 300) e.preventDefault();
++        lastTouch = now;
++      }, { passive: false });
++
+       if ('serviceWorker' in navigator) {
+         window.addEventListener('load', () => {
+           navigator.serviceWorker.register('./sw.js').catch(() => {});

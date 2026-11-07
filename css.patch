@@ -1,126 +1,101 @@
 --- /tmp/chat-window/css/style.css	2026-11-07 06:02:03.592091486 +0000
-+++ /app/applet/css/style.css	2026-11-07 06:30:35.979184152 +0000
-@@ -3,28 +3,48 @@
++++ /app/applet/css/style.css	2026-11-07 07:06:18.793854712 +0000
+@@ -3,21 +3,6 @@
  textarea::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar { display: none; }
  textarea, .hide-scrollbar, .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
  
 -/* 核心修复：把背景图直接钉死在 body 的固定视口上 */
 -html, body {
-+/* ================= 视口与背景锁死（完美铺满物理屏幕，消灭底边） ================= */
-+html {
-     margin: 0;
-     padding: 0;
-     width: 100%;
-     height: 100%;
-+    min-height: 100%;
-+    overflow: hidden;
-+    /* 核心终极方案：html 是 WebKit 的 Root Canvas 画布，背景图放在 html 上，WebKit 会无条件 100% 铺满至物理屏幕最底边缘 */
-     background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-     background-size: cover;
+-    margin: 0;
+-    padding: 0;
+-    width: 100%;
+-    height: 100%;
+-    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+-    background-size: cover;
 -    background-position: center;
-+    background-position: center center;
-     background-repeat: no-repeat;
+-    background-repeat: no-repeat;
 -    background-attachment: fixed; /* 这行是关键，保证它死死贴在屏幕最底层 */
-     background-color: #1a1a1a;
+-    background-color: #1a1a1a;
 -    overflow: hidden;
- }
- 
+-}
+-
  body {
-+    position: fixed;
-+    top: 0;
-+    left: 0;
-+    right: 0;
-+    bottom: 0; /* 必须是 bottom: 0，严禁写 height: 100dvh！100dvh 在 iOS PWA 会被扣除安全区导致缩短 34px 露底 */
-+    width: 100%;
-+    height: 100%;
-+    margin: 0;
-+    padding: 0;
-+    overflow: hidden;
-+    /* 与 html 画布像素级对齐 */
-+    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-+    background-size: cover;
-+    background-position: center center;
-+    background-repeat: no-repeat;
-+    background-color: transparent;
      -webkit-user-select: none;
      -moz-user-select: none;
-     -ms-user-select: none;
-     user-select: none;
-     -webkit-touch-callout: none;
-     touch-action: manipulation;
-+    /* 硬件加速图层，确保背景层与根图层同频 */
-+    -webkit-transform: translate3d(0, 0, 0);
-+    transform: translate3d(0, 0, 0);
- }
- textarea, input { -webkit-user-select: text; user-select: text; }
+@@ -77,7 +62,7 @@
+ .sheet-content { padding: 24px 24px 30px 24px; background: #ffffff; z-index: 30; }
+ .sheet-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; letter-spacing: 1px; }
+ .input-group { margin-bottom: 14px; }
+-.input-field { width: 100%; padding: 16px 20px; font-size: 16px; color: #333333; background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 12px; outline: none; transition: border-color 0.2s; font-family: inherit; }
++.input-field { width: 100%; padding: 16px 20px; font-size: 15px; color: #333333; background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 12px; outline: none; transition: border-color 0.2s; font-family: inherit; }
+ .input-field:focus { border-color: #1a1a1a; }
+ .action-buttons { display: flex; gap: 16px; margin-top: 24px; }
+ .btn { flex: 1; padding: 16px 0; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; cursor: pointer; border: none; font-family: inherit; letter-spacing: 1px; transition: opacity 0.2s; }
+@@ -226,14 +211,52 @@
+ .state-returned .amount::after { content: ''; position: absolute; top: 50%; left: -2px; right: -2px; height: 1px; background-color: rgba(255, 255, 255, 0.7); transform: translateY(-50%); }
+ .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
  
-@@ -228,16 +248,27 @@
- 
- /* ================= 5. PWA 全屏无白边终极代码 ================= */
- .pwa-root {
--  position: fixed;
-+  position: absolute;
-   top: 0; left: 0; right: 0;
--  /* 卡在安全区上方，下方露出的部分直接由 body 铺满背景 */
--  bottom: env(safe-area-inset-bottom, 0px); 
-+  bottom: 0; /* 必须为 0，彻底拆除导致底边的人造断层 */
+-/* ================= 5. PWA 全屏无白边终极代码 ================= */
++/* ================= 5. PWA 全屏无黑边终极解决方案 ================= */
++html {
 +  width: 100%;
 +  height: 100%;
++  min-height: 100%;
++  margin: 0;
++  padding: 0;
++  overscroll-behavior: none;
++  /* 核心：html 是浏览器根画布 (Root Canvas)，将壁纸直接贴在 html 上，物理屏幕 100% 满铺，绝无任何黑边 */
++  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
++  background-size: cover;
++  background-position: center center;
++  background-repeat: no-repeat;
++  background-color: transparent !important;
++}
++
++body {
++  width: 100%;
++  height: 100%;
++  min-height: 100%;
++  margin: 0;
++  padding: 0;
++  /* 彻底去除黑灰色 body，保持完全透明透出壁纸 */
++  background: transparent !important;
++  background-color: transparent !important;
++  overflow: hidden;
++  touch-action: pan-x pan-y;
++  -webkit-text-size-adjust: 100%;
++}
++
+ .pwa-root {
+-  position: fixed;
+-  top: 0; left: 0; right: 0;
+-  /* 卡在安全区上方，下方露出的部分直接由 body 铺满背景 */
+-  bottom: env(safe-area-inset-bottom, 0px); 
++  position: absolute; /* 采用 absolute 避免 fixed 受到 iOS 视觉视口在 Home Indicator 处的硬截断 */
++  top: 0; left: 0; right: 0; bottom: 0;
++  width: 100%;
++  height: 100%;
++  min-height: 100%;
    overflow: hidden;
 -  background-color: transparent;
++  
++  /* 彻底去除兜底黑色 */
 +  background-color: transparent !important;
++
++  /* 背景图与 html 保持像素对齐，确保 .wet-glass 玻璃拟态就近采样 */
++  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
++  background-size: cover;
++  background-position: center center;
++  background-repeat: no-repeat;
  }
  
  .pwa-top-safe {
--  padding-top: max(16px, env(safe-area-inset-top));
-+  padding-top: max(16px, env(safe-area-inset-top, 16px));
-+}
-+
-+/* 底部安全区保护类（输入框下方悬空安全高度） */
-+.pwa-bottom-safe {
-+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-+}
-+
-+/* 工具抽屉底部的安全区保护类 */
-+.pwa-panel-bottom-safe {
-+  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
- }
- 
- #chat-scroll {
-@@ -245,20 +276,28 @@
+@@ -245,7 +268,7 @@
    will-change: transform;
  }
  
 -/* 桌面端效果：居中限制宽度 */
-+/* 桌面端效果：居中限制宽度并赋予壁纸和圆角真机阴影 */
++/* 使用 hover: hover 收紧判断，避免 iPad 被压成 480px */
  @media (hover: hover) and (min-width: 600px) {
    body {
      display: flex;
-     justify-content: center;
--    background: #e5e7eb;
-+    align-items: center;
-+    background: #0f172a;
-   }
-   .pwa-root {
--    position: fixed;
--    top: 0; bottom: 0;
--    left: 50%;
--    transform: translateX(-50%);
-+    position: relative;
-+    top: auto; bottom: auto;
-+    left: auto;
-+    transform: none;
-     width: 100%;
--    max-width: 480px;
--    box-shadow: 0 0 40px rgba(0,0,0,0.15);
-+    max-width: 420px;
-+    height: 100%;
-+    max-height: 890px;
-+    border-radius: 44px;
-+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
-+    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-+    background-size: cover;
-+    background-position: center;
-+    background-repeat: no-repeat;
-   }
- }

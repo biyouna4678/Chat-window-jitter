@@ -211,32 +211,51 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .state-returned .amount::after { content: ''; position: absolute; top: 50%; left: -2px; right: -2px; height: 1px; background-color: rgba(255, 255, 255, 0.7); transform: translateY(-50%); }
 .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
 
-/* ================= 5. PWA 全屏无白边终极解决方案 ================= */
+/* ================= 5. PWA 全屏无黑边终极解决方案 ================= */
 html {
+  width: 100%;
   height: 100%;
+  min-height: 100%;
   margin: 0;
+  padding: 0;
   overscroll-behavior: none;
-  background-color: #1a1a1a; 
+  /* 核心：html 是浏览器根画布 (Root Canvas)，将壁纸直接贴在 html 上，物理屏幕 100% 满铺，绝无任何黑边 */
+  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: transparent !important;
 }
 
 body {
+  width: 100%;
   height: 100%;
+  min-height: 100%;
   margin: 0;
-  background-color: transparent; 
+  padding: 0;
+  /* 彻底去除黑灰色 body，保持完全透明透出壁纸 */
+  background: transparent !important;
+  background-color: transparent !important;
+  overflow: hidden;
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
 }
 
 .pwa-root {
-  position: fixed;
+  position: absolute; /* 采用 absolute 避免 fixed 受到 iOS 视觉视口在 Home Indicator 处的硬截断 */
   top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
   overflow: hidden;
   
-  /* 兜底色 */
-  background-color: #1a1a1a;
+  /* 彻底去除兜底黑色 */
+  background-color: transparent !important;
 
-  /* 背景图直接贴在容器上，优先加载本地高保真资源，解决 Safari ITP 跨站拦截图片导致黑屏的问题 */
+  /* 背景图与 html 保持像素对齐，确保 .wet-glass 玻璃拟态就近采样 */
   background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
   background-size: cover;
-  background-position: center;
+  background-position: center center;
   background-repeat: no-repeat;
 }
 
