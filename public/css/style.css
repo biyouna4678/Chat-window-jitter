@@ -3,48 +3,13 @@
 textarea::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar { display: none; }
 textarea, .hide-scrollbar, .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ================= 视口与背景锁死（完美铺满物理屏幕，消灭底边） ================= */
-html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
-    overflow: hidden;
-    /* 核心终极方案：html 是 WebKit 的 Root Canvas 画布，背景图放在 html 上，WebKit 会无条件 100% 铺满至物理屏幕最底边缘 */
-    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-color: #1a1a1a;
-}
-
 body {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0; /* 必须是 bottom: 0，严禁写 height: 100dvh！100dvh 在 iOS PWA 会被扣除安全区导致缩短 34px 露底 */
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    /* 与 html 画布像素级对齐 */
-    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-color: transparent;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
     touch-action: manipulation;
-    /* 硬件加速图层，确保背景层与根图层同频 */
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
 }
 textarea, input { -webkit-user-select: text; user-select: text; }
 
@@ -97,7 +62,7 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .sheet-content { padding: 24px 24px 30px 24px; background: #ffffff; z-index: 30; }
 .sheet-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; letter-spacing: 1px; }
 .input-group { margin-bottom: 14px; }
-.input-field { width: 100%; padding: 16px 20px; font-size: 16px; color: #333333; background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 12px; outline: none; transition: border-color 0.2s; font-family: inherit; }
+.input-field { width: 100%; padding: 16px 20px; font-size: 15px; color: #333333; background-color: #ffffff; border: 1px solid #dcdcdc; border-radius: 12px; outline: none; transition: border-color 0.2s; font-family: inherit; }
 .input-field:focus { border-color: #1a1a1a; }
 .action-buttons { display: flex; gap: 16px; margin-top: 24px; }
 .btn { flex: 1; padding: 16px 0; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; cursor: pointer; border: none; font-family: inherit; letter-spacing: 1px; transition: opacity 0.2s; }
@@ -246,29 +211,37 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .state-returned .amount::after { content: ''; position: absolute; top: 50%; left: -2px; right: -2px; height: 1px; background-color: rgba(255, 255, 255, 0.7); transform: translateY(-50%); }
 .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
 
-/* ================= 5. PWA 全屏无白边终极代码 ================= */
-.pwa-root {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  bottom: 0; /* 必须为 0，彻底拆除导致底边的人造断层 */
-  width: 100%;
+/* ================= 5. PWA 全屏无白边终极解决方案 ================= */
+html {
   height: 100%;
+  margin: 0;
+  overscroll-behavior: none;
+  background-color: #1a1a1a; 
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  background-color: transparent; 
+}
+
+.pwa-root {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
   overflow: hidden;
-  background-color: transparent !important;
+  
+  /* 兜底色 */
+  background-color: #1a1a1a;
+
+  /* 背景图直接贴在容器上，优先加载本地高保真资源，解决 Safari ITP 跨站拦截图片导致黑屏的问题 */
+  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .pwa-top-safe {
-  padding-top: max(16px, env(safe-area-inset-top, 16px));
-}
-
-/* 底部安全区保护类（输入框下方悬空安全高度） */
-.pwa-bottom-safe {
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-}
-
-/* 工具抽屉底部的安全区保护类 */
-.pwa-panel-bottom-safe {
-  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  padding-top: max(16px, env(safe-area-inset-top));
 }
 
 #chat-scroll {
@@ -276,28 +249,20 @@ textarea, input { -webkit-user-select: text; user-select: text; }
   will-change: transform;
 }
 
-/* 桌面端效果：居中限制宽度并赋予壁纸和圆角真机阴影 */
+/* 使用 hover: hover 收紧判断，避免 iPad 被压成 480px */
 @media (hover: hover) and (min-width: 600px) {
   body {
     display: flex;
     justify-content: center;
-    align-items: center;
-    background: #0f172a;
+    background: #e5e7eb;
   }
   .pwa-root {
-    position: relative;
-    top: auto; bottom: auto;
-    left: auto;
-    transform: none;
+    position: fixed;
+    top: 0; bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: 100%;
-    max-width: 420px;
-    height: 100%;
-    max-height: 890px;
-    border-radius: 44px;
-    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
-    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    max-width: 480px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.15);
   }
 }
