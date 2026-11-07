@@ -1,5 +1,7 @@
---- /tmp/chat-window/css/style.css	2026-11-07 06:02:03.592091486 +0000
-+++ /app/applet/css/style.css	2026-11-07 07:06:18.793854712 +0000
+diff --git a/css/style.css b/css/style.css
+index 7ca9560..d662206 100644
+--- a/css/style.css
++++ b/css/style.css
 @@ -3,21 +3,6 @@
  textarea::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar { display: none; }
  textarea, .hide-scrollbar, .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -22,7 +24,7 @@
  body {
      -webkit-user-select: none;
      -moz-user-select: none;
-@@ -77,7 +62,7 @@
+@@ -77,7 +62,7 @@ textarea, input { -webkit-user-select: text; user-select: text; }
  .sheet-content { padding: 24px 24px 30px 24px; background: #ffffff; z-index: 30; }
  .sheet-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; letter-spacing: 1px; }
  .input-group { margin-bottom: 14px; }
@@ -31,12 +33,12 @@
  .input-field:focus { border-color: #1a1a1a; }
  .action-buttons { display: flex; gap: 16px; margin-top: 24px; }
  .btn { flex: 1; padding: 16px 0; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; cursor: pointer; border: none; font-family: inherit; letter-spacing: 1px; transition: opacity 0.2s; }
-@@ -226,14 +211,52 @@
+@@ -226,14 +211,65 @@ textarea, input { -webkit-user-select: text; user-select: text; }
  .state-returned .amount::after { content: ''; position: absolute; top: 50%; left: -2px; right: -2px; height: 1px; background-color: rgba(255, 255, 255, 0.7); transform: translateY(-50%); }
  .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
  
 -/* ================= 5. PWA 全屏无白边终极代码 ================= */
-+/* ================= 5. PWA 全屏无黑边终极解决方案 ================= */
++/* ================= 5. PWA 全屏无黑边无白边终极解决方案 ================= */
 +html {
 +  width: 100%;
 +  height: 100%;
@@ -44,12 +46,8 @@
 +  margin: 0;
 +  padding: 0;
 +  overscroll-behavior: none;
-+  /* 核心：html 是浏览器根画布 (Root Canvas)，将壁纸直接贴在 html 上，物理屏幕 100% 满铺，绝无任何黑边 */
-+  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-+  background-size: cover;
-+  background-position: center center;
-+  background-repeat: no-repeat;
-+  background-color: transparent !important;
++  /* 兜底色：精准匹配壁纸底沿铁门色 (RGB: 63, 59, 58 -> #3f3b3a)，杜绝白闪或突兀纯黑 */
++  background-color: #3f3b3a !important;
 +}
 +
 +body {
@@ -58,78 +56,126 @@
 +  min-height: 100%;
 +  margin: 0;
 +  padding: 0;
-+  /* 彻底去除黑灰色 body，保持完全透明透出壁纸 */
-+  background: transparent !important;
-+  background-color: transparent !important;
++  background-color: #3f3b3a !important;
 +  overflow: hidden;
 +  touch-action: pan-x pan-y;
 +  -webkit-text-size-adjust: 100%;
 +}
 +
++/* 物理屏幕穿透全景壁纸层：利用超视口高度与负 bottom，直接穿透 iOS Home Indicator 安全区直达屏幕物理底沿 */
++.app-wallpaper-layer {
++  position: fixed;
++  top: 0;
++  left: 0;
++  right: 0;
++  bottom: -60px;
++  width: 100%;
++  height: calc(100% + 60px);
++  height: calc(100vh + 60px);
++  height: calc(100lvh + 60px);
++  min-height: calc(100% + 60px);
++  background-image: url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
++  background-size: cover;
++  background-position: center bottom;
++  background-repeat: no-repeat;
++  pointer-events: none;
++  z-index: 0;
++  will-change: transform;
++}
++
++/* PWA UI 容器：保持透明，不遮挡底层壁纸，承载所有界面交互与毛玻璃 */
  .pwa-root {
--  position: fixed;
+   position: fixed;
 -  top: 0; left: 0; right: 0;
 -  /* 卡在安全区上方，下方露出的部分直接由 body 铺满背景 */
 -  bottom: env(safe-area-inset-bottom, 0px); 
-+  position: absolute; /* 采用 absolute 避免 fixed 受到 iOS 视觉视口在 Home Indicator 处的硬截断 */
-+  top: 0; left: 0; right: 0; bottom: 0;
++  top: 0;
++  left: 0;
++  right: 0;
++  bottom: 0;
 +  width: 100%;
 +  height: 100%;
-+  min-height: 100%;
    overflow: hidden;
 -  background-color: transparent;
-+  
-+  /* 彻底去除兜底黑色 */
++  background: transparent !important;
 +  background-color: transparent !important;
-+
-+  /* 背景图与 html 保持像素对齐，确保 .wet-glass 玻璃拟态就近采样 */
-+  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-+  background-size: cover;
-+  background-position: center center;
-+  background-repeat: no-repeat;
++  background-image: none !important;
++  z-index: 10;
  }
  
  .pwa-top-safe {
-@@ -245,7 +268,7 @@
+@@ -245,20 +281,27 @@ textarea, input { -webkit-user-select: text; user-select: text; }
    will-change: transform;
  }
  
 -/* 桌面端效果：居中限制宽度 */
-+/* 使用 hover: hover 收紧判断，避免 iPad 被压成 480px */
++/* 桌面端大屏居中限制 */
  @media (hover: hover) and (min-width: 600px) {
    body {
      display: flex;
---- /tmp/chat-window/index.html	2026-11-07 06:02:03.592629546 +0000
-+++ /app/applet/index.html	2026-11-07 07:06:47.814144079 +0000
-@@ -7,7 +7,6 @@
+     justify-content: center;
+-    background: #e5e7eb;
++    background: #e5e7eb !important;
+   }
++  .app-wallpaper-layer,
+   .pwa-root {
+     position: fixed;
+-    top: 0; bottom: 0;
++    top: 0;
++    bottom: 0;
+     left: 50%;
+     transform: translateX(-50%);
+     width: 100%;
+     max-width: 480px;
+     box-shadow: 0 0 40px rgba(0,0,0,0.15);
+   }
++  .app-wallpaper-layer {
++    height: 100%;
++    min-height: 100%;
++    bottom: 0;
++  }
+ }
+diff --git a/index.html b/index.html
+index 9484999..b0e198b 100644
+--- a/index.html
++++ b/index.html
+@@ -7,7 +7,7 @@
      
      <meta name="apple-mobile-web-app-capable" content="yes">
      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 -    <meta name="theme-color" content="#1a1a1a">
++    <meta name="theme-color" content="#3f3b3a">
      <link rel="manifest" href="./manifest.json">
  
      <title>液态玻璃通讯</title>
-@@ -17,7 +16,7 @@
+@@ -17,16 +17,19 @@
      
      <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
      
 -    <link rel="stylesheet" href="./css/style.css?v=10">
-+    <link rel="stylesheet" href="./css/style.css?v=15">
-     <script src="./js/chat.js?v=10"></script>
-     <script src="./js/call.js?v=10"></script>
-     <script src="./js/map.js?v=10"></script>
-@@ -25,8 +24,8 @@
+-    <script src="./js/chat.js?v=10"></script>
+-    <script src="./js/call.js?v=10"></script>
+-    <script src="./js/map.js?v=10"></script>
+-    <script src="./js/transfer.js?v=10"></script>
++    <link rel="stylesheet" href="./css/style.css?v=16">
++    <script src="./js/chat.js?v=11"></script>
++    <script src="./js/call.js?v=11"></script>
++    <script src="./js/map.js?v=11"></script>
++    <script src="./js/transfer.js?v=11"></script>
  </head>
  <body class="font-sans antialiased overflow-hidden">
  
 -    <!-- 根容器 -->
 -    <div class="pwa-root" 
-+    <!-- 删掉了 bg-layer，根容器直接自带背景图 -->
++    <!-- 1. 物理满屏全景壁纸层：穿透 iOS 底部安全区，无黑边无白边 -->
++    <div class="app-wallpaper-layer" aria-hidden="true"></div>
++
++    <!-- 2. PWA 交互 UI 容器 -->
 +    <div class="pwa-root flex flex-col relative" 
           x-data="{ ...chatApp(), ...callManager(), ...mapManager(), ...transferManager() }" 
           x-init="initChat(); initCall();"
           @beforeunload.window="stopTimer(); stopCamera(); if(recognition) recognition.stop();">
-@@ -35,7 +34,7 @@
+@@ -35,7 +38,7 @@
          <input type="file" id="native-camera-picker" accept="image/*" capture="environment" class="hidden" @change="handleImageUpload($event)">
  
          <!-- ================= 1. 聊天主界面 ================= -->
@@ -138,7 +184,7 @@
               :class="callState !== 'idle' && !isMinimized ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'">
              
              <!-- 顶部固定栏 -->
-@@ -44,7 +43,7 @@
+@@ -44,7 +47,7 @@
                      <button class="p-1 ml-0 text-black hover:text-black transition-colors rounded-full hover:bg-white/20 shrink-0" @click="alert('执行返回操作')">
                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                      </button>
@@ -147,7 +193,7 @@
                      <div class="flex-1 min-w-0 flex flex-col justify-center pl-1 pr-3">
                          <span class="text-gray-900 font-bold text-[14px] truncate">Yosali</span>
                          <span class="text-gray-700/80 text-[10px] mt-0.5 truncate">
-@@ -89,14 +88,14 @@
+@@ -89,14 +92,14 @@
                              <div class="flex flex-col w-fit" :class="msg.sender === 'me' ? 'items-end' : 'items-start'">
                                  <div class="flex gap-2.5 mb-1.5" :class="msg.sender === 'me' ? 'items-center' : 'items-start'">
                                      <template x-if="msg.sender === 'yosali'">
@@ -164,7 +210,7 @@
                                      </template>
                                  </div>
                                  <div class="border-t border-dashed border-gray-400/60 w-full mb-2.5"></div>
-@@ -164,13 +163,12 @@
+@@ -164,13 +167,12 @@
              </div>
  
              <!-- ================= 底部输入区 ================= -->
@@ -182,7 +228,7 @@
                          
                          <template x-if="!hasText()">
                              <div class="flex items-center gap-1 shrink-0">
-@@ -179,7 +177,7 @@
+@@ -179,7 +181,7 @@
                                          @touchstart.prevent
                                          @click="showToolsPanel = !showToolsPanel" 
                                          class="p-1 rounded-full hover:bg-white/20">
@@ -191,7 +237,7 @@
                                  </button>
                                  
                                  <button type="button" 
-@@ -188,7 +186,7 @@
+@@ -188,7 +190,7 @@
                                          @click="showToolsPanel = !showToolsPanel;" 
                                          :class="{'bg-white/30': showToolsPanel}" 
                                          class="p-1 rounded-full hover:bg-white/20 flex items-center justify-center shrink-0 w-8 h-8">
@@ -200,7 +246,7 @@
                                  </button>
                              </div>
                          </template>
-@@ -203,9 +201,9 @@
+@@ -203,9 +205,9 @@
                  </div>
  
                  <div class="w-full overflow-hidden transition-[max-height] duration-300 ease-out transform-gpu will-change-[max-height] max-h-0" 
@@ -212,7 +258,7 @@
                              <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
                              <div class="flex-1 relative px-4 pt-2">
                                  <div x-show="currentPage === 0" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
-@@ -332,7 +330,7 @@
+@@ -332,7 +334,7 @@
              <div class="flex flex-col items-center justify-center flex-1 w-full mt-2 relative z-10 pointer-events-none">
                  <div class="relative flex items-center justify-center w-56 h-56 mb-6 shrink-0 pointer-events-auto">
                      <div class="relative rounded-full border-[3px] border-gray-400/50 shadow-2xl z-10 overflow-hidden" :class="callState === 'receiving' ? 'w-36 h-36' : 'w-28 h-28'">
@@ -221,7 +267,7 @@
                      </div>
                      <div class="absolute pointer-events-none z-0" :class="callState === 'receiving' ? 'w-36 h-36' : 'w-28 h-28'">
                          <div class="ripple-ring" :class="callState === 'active' ? 'ripple-active' : ''" style="animation-delay: 0s;"></div>
-@@ -384,7 +382,7 @@
+@@ -384,7 +386,7 @@
  
          <!-- ================= 视频通话 ================= -->
          <div x-show="callType === 'video' && callState !== 'idle' && !isMinimized" x-transition.opacity class="fixed inset-0 z-[100] flex flex-col justify-between pt-12 pb-8 px-4 bg-[#121212] overflow-hidden" style="display: none;">
@@ -230,7 +276,7 @@
              <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none z-0" :class="callState === 'active' ? 'opacity-100' : 'opacity-0'"></div>
              <div class="relative z-10 flex justify-between items-center w-full shrink-0 h-12">
                  <button @click="toggleMinimize()" class="w-12 h-12 rounded-full dark-glass flex items-center justify-center text-white z-20">
-@@ -397,15 +395,15 @@
+@@ -397,15 +399,15 @@
                  <div class="relative w-full h-full bg-[#1a1a1a] flex items-center justify-center">
                      <video x-show="cameraOn" x-ref="videoElement" autoplay playsinline muted class="w-full h-full object-cover transform" :class="isFrontCamera ? 'scale-x-[-1]' : ''"></video>
                      <div x-show="!cameraOn" class="absolute inset-0 w-full h-full flex items-center justify-center">
@@ -249,7 +295,7 @@
                          <div class="absolute inset-0 bg-black/10 animate-pulse"></div>
                      </div>
                      <h1 class="text-white text-2xl font-bold tracking-widest mt-2">Yosali</h1>
-@@ -519,12 +517,12 @@
+@@ -519,12 +521,12 @@
               <div class="absolute top-2.5 left-2.5 w-2.5 h-2.5 rounded-full bg-blue-500 border border-white/50 animate-bounce shadow-sm z-20" x-show="callState === 'calling'"></div>
               <div class="w-[56px] h-[56px] rounded-[14px] overflow-hidden shadow-sm border border-white/50 mb-1.5 pointer-events-none relative z-10 bg-gray-800">
                   <template x-if="callType === 'voice' || (callType === 'video' && callState !== 'active')">
@@ -264,7 +310,7 @@
                       </div>
                   </template>
               </div>
-@@ -719,6 +717,20 @@
+@@ -719,6 +721,20 @@
      </div>
  
      <script>
@@ -285,3 +331,16 @@
        if ('serviceWorker' in navigator) {
          window.addEventListener('load', () => {
            navigator.serviceWorker.register('./sw.js').catch(() => {});
+diff --git a/manifest.json b/manifest.json
+index d444c97..b3a2f51 100644
+--- a/manifest.json
++++ b/manifest.json
+@@ -5,6 +5,6 @@
+   "scope": "./",
+   "display": "standalone",
+   "orientation": "portrait",
+-  "background_color": "#1a1a1a",
+-  "theme_color": "#1a1a1a"
++  "background_color": "#3f3b3a",
++  "theme_color": "#3f3b3a"
+ }

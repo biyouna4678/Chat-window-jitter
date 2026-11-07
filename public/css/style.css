@@ -211,7 +211,7 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .state-returned .amount::after { content: ''; position: absolute; top: 50%; left: -2px; right: -2px; height: 1px; background-color: rgba(255, 255, 255, 0.7); transform: translateY(-50%); }
 .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
 
-/* ================= 5. PWA 全屏无黑边终极解决方案 ================= */
+/* ================= 5. PWA 全屏无黑边无白边终极解决方案 ================= */
 html {
   width: 100%;
   height: 100%;
@@ -219,12 +219,8 @@ html {
   margin: 0;
   padding: 0;
   overscroll-behavior: none;
-  /* 核心：html 是浏览器根画布 (Root Canvas)，将壁纸直接贴在 html 上，物理屏幕 100% 满铺，绝无任何黑边 */
-  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-color: transparent !important;
+  /* 兜底色：精准匹配壁纸底沿铁门色 (RGB: 63, 59, 58 -> #3f3b3a)，杜绝白闪或突兀纯黑 */
+  background-color: #3f3b3a !important;
 }
 
 body {
@@ -233,30 +229,47 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
-  /* 彻底去除黑灰色 body，保持完全透明透出壁纸 */
-  background: transparent !important;
-  background-color: transparent !important;
+  background-color: #3f3b3a !important;
   overflow: hidden;
   touch-action: pan-x pan-y;
   -webkit-text-size-adjust: 100%;
 }
 
+/* 物理屏幕穿透全景壁纸层：利用超视口高度与负 bottom，直接穿透 iOS Home Indicator 安全区直达屏幕物理底沿 */
+.app-wallpaper-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: -60px;
+  width: 100%;
+  height: calc(100% + 60px);
+  height: calc(100vh + 60px);
+  height: calc(100lvh + 60px);
+  min-height: calc(100% + 60px);
+  background-image: url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+}
+
+/* PWA UI 容器：保持透明，不遮挡底层壁纸，承载所有界面交互与毛玻璃 */
 .pwa-root {
-  position: absolute; /* 采用 absolute 避免 fixed 受到 iOS 视觉视口在 Home Indicator 处的硬截断 */
-  top: 0; left: 0; right: 0; bottom: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
-  min-height: 100%;
   overflow: hidden;
-  
-  /* 彻底去除兜底黑色 */
+  background: transparent !important;
   background-color: transparent !important;
-
-  /* 背景图与 html 保持像素对齐，确保 .wet-glass 玻璃拟态就近采样 */
-  background-image: url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
+  background-image: none !important;
+  z-index: 10;
 }
 
 .pwa-top-safe {
@@ -268,20 +281,27 @@ body {
   will-change: transform;
 }
 
-/* 使用 hover: hover 收紧判断，避免 iPad 被压成 480px */
+/* 桌面端大屏居中限制 */
 @media (hover: hover) and (min-width: 600px) {
   body {
     display: flex;
     justify-content: center;
-    background: #e5e7eb;
+    background: #e5e7eb !important;
   }
+  .app-wallpaper-layer,
   .pwa-root {
     position: fixed;
-    top: 0; bottom: 0;
+    top: 0;
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
     max-width: 480px;
     box-shadow: 0 0 40px rgba(0,0,0,0.15);
+  }
+  .app-wallpaper-layer {
+    height: 100%;
+    min-height: 100%;
+    bottom: 0;
   }
 }

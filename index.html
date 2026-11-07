@@ -7,6 +7,7 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#3f3b3a">
     <link rel="manifest" href="./manifest.json">
 
     <title>液态玻璃通讯</title>
@@ -16,15 +17,18 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="./css/style.css?v=15">
-    <script src="./js/chat.js?v=10"></script>
-    <script src="./js/call.js?v=10"></script>
-    <script src="./js/map.js?v=10"></script>
-    <script src="./js/transfer.js?v=10"></script>
+    <link rel="stylesheet" href="./css/style.css?v=16">
+    <script src="./js/chat.js?v=11"></script>
+    <script src="./js/call.js?v=11"></script>
+    <script src="./js/map.js?v=11"></script>
+    <script src="./js/transfer.js?v=11"></script>
 </head>
 <body class="font-sans antialiased overflow-hidden">
 
-    <!-- 删掉了 bg-layer，根容器直接自带背景图 -->
+    <!-- 1. 物理满屏全景壁纸层：穿透 iOS 底部安全区，无黑边无白边 -->
+    <div class="app-wallpaper-layer" aria-hidden="true"></div>
+
+    <!-- 2. PWA 交互 UI 容器 -->
     <div class="pwa-root flex flex-col relative" 
          x-data="{ ...chatApp(), ...callManager(), ...mapManager(), ...transferManager() }" 
          x-init="initChat(); initCall();"
