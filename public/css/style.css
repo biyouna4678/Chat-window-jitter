@@ -219,8 +219,8 @@ html {
   margin: 0;
   padding: 0;
   overscroll-behavior: none;
-  /* 兜底色：精准匹配壁纸底沿铁门色 (RGB: 63, 59, 58 -> #3f3b3a)，杜绝白闪或突兀纯黑 */
-  background-color: #3f3b3a !important;
+  /* 兜底色：精准匹配高清壁纸浅银白色 (#EFF0F2)，无论首屏还是过渡均无缝融合 */
+  background-color: #EFF0F2 !important;
 }
 
 body {
@@ -229,27 +229,27 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #3f3b3a !important;
+  background-color: #EFF0F2 !important;
   overflow: hidden;
   touch-action: pan-x pan-y;
   -webkit-text-size-adjust: 100%;
 }
 
-/* 物理屏幕穿透全景壁纸层：利用超视口高度与负 bottom，直接穿透 iOS Home Indicator 安全区直达屏幕物理底沿 */
+/* 物理屏幕穿透全景壁纸层：上下各延伸冗余量，彻底穿透 iOS 顶部刘海/灵动岛与底部 Home Indicator */
 .app-wallpaper-layer {
   position: fixed;
-  top: 0;
+  top: -20px;
   left: 0;
   right: 0;
-  bottom: -60px;
+  bottom: -80px;
   width: 100%;
-  height: calc(100% + 60px);
-  height: calc(100vh + 60px);
-  height: calc(100lvh + 60px);
-  min-height: calc(100% + 60px);
-  background-image: url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+  height: calc(100% + 100px);
+  height: calc(100vh + 100px);
+  height: calc(100lvh + 100px);
+  min-height: calc(100% + 100px);
+  background-image: url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg');
   background-size: cover;
-  background-position: center bottom;
+  background-position: center center;
   background-repeat: no-repeat;
   pointer-events: none;
   z-index: 0;
