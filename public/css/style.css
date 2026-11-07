@@ -9,22 +9,28 @@ html {
     padding: 0;
     width: 100%;
     height: 100%;
+    min-height: 100%;
     overflow: hidden;
-    background-color: #1a1a1a; /* 图片加载前的兜底 */
+    /* 核心终极方案：html 是 WebKit 的 Root Canvas 画布，背景图放在 html 上，WebKit 会无条件 100% 铺满至物理屏幕最底边缘 */
+    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-color: #1a1a1a;
 }
 
 body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh; /* iOS 15.4+ 动态全屏视口 */
+    right: 0;
+    bottom: 0; /* 必须是 bottom: 0，严禁写 height: 100dvh！100dvh 在 iOS PWA 会被扣除安全区导致缩短 34px 露底 */
+    width: 100%;
+    height: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
-    /* 核心修复：移除 background-attachment: fixed，采用默认 scroll */
-    /* 因为 body 自身已为 position: fixed，默认值天然与视口同频且突破 WebKit 安全区裁剪 */
+    /* 与 html 画布像素级对齐 */
     background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
     background-size: cover;
     background-position: center center;

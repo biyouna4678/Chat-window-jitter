@@ -1,15 +1,23 @@
 --- /tmp/chat-window/index.html	2026-11-07 06:02:03.592629546 +0000
-+++ /app/applet/index.html	2026-11-07 06:15:17.171993941 +0000
-@@ -17,7 +17,7 @@
++++ /app/applet/index.html	2026-11-07 06:30:54.261364456 +0000
+@@ -7,7 +7,6 @@
+     
+     <meta name="apple-mobile-web-app-capable" content="yes">
+     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+-    <meta name="theme-color" content="#1a1a1a">
+     <link rel="manifest" href="./manifest.json">
+ 
+     <title>液态玻璃通讯</title>
+@@ -17,7 +16,7 @@
      
      <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
      
 -    <link rel="stylesheet" href="./css/style.css?v=10">
-+    <link rel="stylesheet" href="./css/style.css?v=11">
++    <link rel="stylesheet" href="./css/style.css?v=12">
      <script src="./js/chat.js?v=10"></script>
      <script src="./js/call.js?v=10"></script>
      <script src="./js/map.js?v=10"></script>
-@@ -166,11 +166,11 @@
+@@ -166,11 +165,11 @@
              <!-- ================= 底部输入区 ================= -->
              <div class="shrink-0 w-full z-50 bg-transparent relative">
                  
@@ -24,7 +32,7 @@
                          
                          <template x-if="!hasText()">
                              <div class="flex items-center gap-1 shrink-0">
-@@ -203,9 +203,9 @@
+@@ -203,9 +202,9 @@
                  </div>
  
                  <div class="w-full overflow-hidden transition-[max-height] duration-300 ease-out transform-gpu will-change-[max-height] max-h-0" 

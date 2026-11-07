@@ -1,6 +1,6 @@
 --- /tmp/chat-window/css/style.css	2026-11-07 06:02:03.592091486 +0000
-+++ /app/applet/css/style.css	2026-11-07 06:14:43.970695175 +0000
-@@ -3,28 +3,42 @@
++++ /app/applet/css/style.css	2026-11-07 06:30:35.979184152 +0000
+@@ -3,28 +3,48 @@
  textarea::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar { display: none; }
  textarea, .hide-scrollbar, .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
  
@@ -12,28 +12,31 @@
      padding: 0;
      width: 100%;
      height: 100%;
--    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
--    background-size: cover;
++    min-height: 100%;
++    overflow: hidden;
++    /* 核心终极方案：html 是 WebKit 的 Root Canvas 画布，背景图放在 html 上，WebKit 会无条件 100% 铺满至物理屏幕最底边缘 */
+     background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+     background-size: cover;
 -    background-position: center;
--    background-repeat: no-repeat;
++    background-position: center center;
+     background-repeat: no-repeat;
 -    background-attachment: fixed; /* 这行是关键，保证它死死贴在屏幕最底层 */
--    background-color: #1a1a1a;
-     overflow: hidden;
-+    background-color: #1a1a1a; /* 图片加载前的兜底 */
+     background-color: #1a1a1a;
+-    overflow: hidden;
  }
  
  body {
 +    position: fixed;
 +    top: 0;
 +    left: 0;
-+    width: 100vw;
-+    height: 100vh;
-+    height: 100dvh; /* iOS 15.4+ 动态全屏视口 */
++    right: 0;
++    bottom: 0; /* 必须是 bottom: 0，严禁写 height: 100dvh！100dvh 在 iOS PWA 会被扣除安全区导致缩短 34px 露底 */
++    width: 100%;
++    height: 100%;
 +    margin: 0;
 +    padding: 0;
 +    overflow: hidden;
-+    /* 核心修复：移除 background-attachment: fixed，采用默认 scroll */
-+    /* 因为 body 自身已为 position: fixed，默认值天然与视口同频且突破 WebKit 安全区裁剪 */
++    /* 与 html 画布像素级对齐 */
 +    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
 +    background-size: cover;
 +    background-position: center center;
@@ -51,7 +54,7 @@
  }
  textarea, input { -webkit-user-select: text; user-select: text; }
  
-@@ -228,16 +242,27 @@
+@@ -228,16 +248,27 @@
  
  /* ================= 5. PWA 全屏无白边终极代码 ================= */
  .pwa-root {
@@ -84,7 +87,7 @@
  }
  
  #chat-scroll {
-@@ -245,20 +270,28 @@
+@@ -245,20 +276,28 @@
    will-change: transform;
  }
  
