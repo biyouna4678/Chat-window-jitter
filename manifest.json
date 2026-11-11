@@ -5,6 +5,6 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#EFF0F2",
-  "theme_color": "#EFF0F2"
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a"
 }

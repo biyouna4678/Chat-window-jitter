@@ -1,30 +1,84 @@
 diff --git a/css/style.css b/css/style.css
-index 7ca9560..c500f6d 100644
+index 48a3cdf..0fa4ab0 100644
 --- a/css/style.css
 +++ b/css/style.css
-@@ -3,21 +3,6 @@
+@@ -3,75 +3,16 @@
  textarea::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar { display: none; }
  textarea, .hide-scrollbar, .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
  
--/* 核心修复：把背景图直接钉死在 body 的固定视口上 */
--html, body {
+-/* ================= 终极视口与背景锁死（修复底部黑边与橡皮筋） ================= */
+-html {
 -    margin: 0;
 -    padding: 0;
--    width: 100%;
 -    height: 100%;
--    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
--    background-size: cover;
--    background-position: center;
--    background-repeat: no-repeat;
--    background-attachment: fixed; /* 这行是关键，保证它死死贴在屏幕最底层 */
--    background-color: #1a1a1a;
 -    overflow: hidden;
+-    background-color: #1a1a1a; /* 仅作为首屏加载的兜底色 */
+-    overscroll-behavior: none; /* 阻止页面级回弹拉扯 */
 -}
 -
  body {
+-    margin: 0;
+-    padding: 0;
+-    width: 100vw;
+-    height: 100vh; /* 核心：必须用 100vh，绝对不要用 100dvh */
+-    overflow: hidden;
+-    
+-    /* 背景图直接铺满 body 物理视口 */
+-    background-image: url('https://i.ibb.co/VWmvYVTV/IMG-7150.jpg');
+-    background-size: cover;
+-    background-position: center center;
+-    background-repeat: no-repeat;
+-    background-color: transparent;
+-
+-    /* 禁用双击缩放、长按菜单和选中 */
      -webkit-user-select: none;
      -moz-user-select: none;
-@@ -77,7 +62,7 @@ textarea, input { -webkit-user-select: text; user-select: text; }
+     -ms-user-select: none;
+     user-select: none;
+     -webkit-touch-callout: none;
+     touch-action: manipulation;
+-    
+-    overscroll-behavior: none; /* 阻止页面级回弹拉扯 */
+ }
+ textarea, input { -webkit-user-select: text; user-select: text; }
+ 
+-/* 根容器：统一 100vh，不搞 fixed/absolute 的复杂层级 */
+-.pwa-root {
+-    position: relative;
+-    width: 100%;
+-    height: 100vh;
+-    overflow: hidden;
+-    background-color: transparent;
+-}
+-
+-/* ================= PWA 安全区辅助类 ================= */
+-/* 顶部避让刘海/灵动岛 */
+-.pwa-top-safe {
+-    padding-top: max(12px, env(safe-area-inset-top, 12px));
+-}
+-
+-/* 底部输入框避让 Home Indicator，下方直接透出 body 的壁纸 */
+-.pwa-bottom-safe {
+-    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+-}
+-
+-/* 展开工具面板时的底部避让 */
+-.pwa-panel-bottom-safe {
+-    padding-bottom: env(safe-area-inset-bottom, 0px);
+-}
+-
+-/* ================= 滚动区域防回弹 ================= */
+-/* 聊天列表与字幕区，禁止将滚动传递给父级，只在内部回弹 */
+-#chat-scroll, .hide-scrollbar {
+-    -webkit-overflow-scrolling: touch;
+-    overscroll-behavior-y: contain;
+-    will-change: transform;
+-}
+-
+ /* ================= 核心玻璃拟态 ================= */
+ .wet-glass {
+     background: rgba(255, 255, 255, 0.25);
+@@ -121,7 +62,7 @@ textarea, input { -webkit-user-select: text; user-select: text; }
  .sheet-content { padding: 24px 24px 30px 24px; background: #ffffff; z-index: 30; }
  .sheet-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; letter-spacing: 1px; }
  .input-group { margin-bottom: 14px; }
@@ -33,82 +87,75 @@ index 7ca9560..c500f6d 100644
  .input-field:focus { border-color: #1a1a1a; }
  .action-buttons { display: flex; gap: 16px; margin-top: 24px; }
  .btn { flex: 1; padding: 16px 0; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; cursor: pointer; border: none; font-family: inherit; letter-spacing: 1px; transition: opacity 0.2s; }
-@@ -226,14 +211,65 @@ textarea, input { -webkit-user-select: text; user-select: text; }
+@@ -270,14 +211,82 @@ textarea, input { -webkit-user-select: text; user-select: text; }
  .state-returned .amount::after { content: ''; position: absolute; top: 50%; left: -2px; right: -2px; height: 1px; background-color: rgba(255, 255, 255, 0.7); transform: translateY(-50%); }
  .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
  
--/* ================= 5. PWA 全屏无白边终极代码 ================= */
-+/* ================= 5. PWA 全屏无黑边无白边终极解决方案 ================= */
+-/* ================= 5. 桌面端效果 ================= */
++/* ================= 5. PWA 全屏与兼容性解决方案（实战复盘标准版） ================= */
++/* 1. 页面死锁，禁止整体滚动 */
 +html {
-+  width: 100%;
-+  height: 100%;
-+  min-height: 100%;
-+  margin: 0;
-+  padding: 0;
-+  overscroll-behavior: none;
-+  /* 兜底色：精准匹配高清壁纸浅银白色 (#EFF0F2)，无论首屏还是过渡均无缝融合 */
-+  background-color: #EFF0F2 !important;
++    height: 100%;
++    overflow: hidden;
++    overscroll-behavior: none; /* 阻止整体页面橡皮筋回弹 */
++    background-color: #1a1a1a; /* 最底层的兜底色 */
 +}
 +
++/* 2. 背景层铺满物理屏幕（不要在 body 加任何 padding） */
 +body {
-+  width: 100%;
-+  height: 100%;
-+  min-height: 100%;
-+  margin: 0;
-+  padding: 0;
-+  background-color: #EFF0F2 !important;
-+  overflow: hidden;
-+  touch-action: pan-x pan-y;
-+  -webkit-text-size-adjust: 100%;
++    margin: 0;
++    padding: 0;
++    width: 100vw;
++    height: 100vh; /* 核心：绝对不要用 100dvh */
++    overflow: hidden;
++    overscroll-behavior: none;
++    background-image: url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg');
++    background-size: cover;
++    background-position: center;
++    background-repeat: no-repeat;
++    background-color: transparent; /* 保持透明，露出 html 的兜底色 */
++    touch-action: manipulation; /* 禁用双击缩放 */
 +}
 +
-+/* 物理屏幕穿透全景壁纸层：上下各延伸冗余量，彻底穿透 iOS 顶部刘海/灵动岛与底部 Home Indicator */
-+.app-wallpaper-layer {
-+  position: fixed;
-+  top: -20px;
-+  left: 0;
-+  right: 0;
-+  bottom: -80px;
-+  width: 100%;
-+  height: calc(100% + 100px);
-+  height: calc(100vh + 100px);
-+  height: calc(100lvh + 100px);
-+  min-height: calc(100% + 100px);
-+  background-image: url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg');
-+  background-size: cover;
-+  background-position: center center;
-+  background-repeat: no-repeat;
-+  pointer-events: none;
-+  z-index: 0;
-+  will-change: transform;
++/* 3. 根容器顶天立地 */
++.pwa-root {
++    position: absolute;
++    top: 0; left: 0; right: 0; bottom: 0;
++    width: 100%;
++    height: 100%;
++    overflow: hidden;
++    background-color: transparent;
 +}
 +
-+/* PWA UI 容器：保持透明，不遮挡底层壁纸，承载所有界面交互与毛玻璃 */
- .pwa-root {
-   position: fixed;
--  top: 0; left: 0; right: 0;
--  /* 卡在安全区上方，下方露出的部分直接由 body 铺满背景 */
--  bottom: env(safe-area-inset-bottom, 0px); 
-+  top: 0;
-+  left: 0;
-+  right: 0;
-+  bottom: 0;
-+  width: 100%;
-+  height: 100%;
-   overflow: hidden;
--  background-color: transparent;
-+  background: transparent !important;
-+  background-color: transparent !important;
-+  background-image: none !important;
-+  z-index: 10;
- }
- 
- .pwa-top-safe {
-@@ -245,20 +281,27 @@ textarea, input { -webkit-user-select: text; user-select: text; }
-   will-change: transform;
- }
- 
--/* 桌面端效果：居中限制宽度 */
++/* 顶部安全区（刘海/灵动岛） */
++.pwa-top-safe {
++    padding-top: max(12px, env(safe-area-inset-top));
++}
++
++/* 底部安全区（Home Indicator 小黑条） */
++.pwa-bottom-safe {
++    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
++}
++
++/* 展开工具面板时的底部避让 */
++.pwa-panel-bottom-safe {
++    padding-bottom: env(safe-area-inset-bottom, 0px);
++}
++
++/* 聊天列表滚动优化 */
++#chat-scroll {
++    -webkit-overflow-scrolling: touch;
++    overscroll-behavior-y: contain; /* 核心：禁止滚动穿透到外层 body */
++}
++
++/* 图片/头像的“物理防御”：抹杀事件流，彻底杜绝 iOS 连续点击触发隐藏放大 Bug */
++.msg-avatar-wrapper, 
++.msg-avatar-wrapper img {
++    pointer-events: none !important;
++    touch-action: none !important;
++    -webkit-user-drag: none !important;
++}
++
 +/* 桌面端大屏居中限制 */
  @media (hover: hover) and (min-width: 600px) {
    body {
@@ -117,65 +164,52 @@ index 7ca9560..c500f6d 100644
 -    background: #e5e7eb;
 +    background: #e5e7eb !important;
    }
-+  .app-wallpaper-layer,
    .pwa-root {
-     position: fixed;
--    top: 0; bottom: 0;
-+    top: 0;
-+    bottom: 0;
-     left: 50%;
-     transform: translateX(-50%);
++    position: absolute;
++    top: 0; bottom: 0;
++    left: 50%;
++    transform: translateX(-50%);
      width: 100%;
      max-width: 480px;
      box-shadow: 0 0 40px rgba(0,0,0,0.15);
-   }
-+  .app-wallpaper-layer {
-+    height: 100%;
-+    min-height: 100%;
-+    bottom: 0;
-+  }
- }
 diff --git a/index.html b/index.html
-index 9484999..0e47f0f 100644
+index da6fdc5..aab08cb 100644
 --- a/index.html
 +++ b/index.html
-@@ -7,7 +7,7 @@
+@@ -2,7 +2,6 @@
+ <html lang="zh-CN">
+ <head>
+     <meta charset="UTF-8">
+-    <!-- 核心：viewport-fit=cover 铺满刘海屏，user-scalable=no 防止双击放大撑破布局 -->
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+     <meta name="referrer" content="no-referrer">
      
-     <meta name="apple-mobile-web-app-capable" content="yes">
-     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
--    <meta name="theme-color" content="#1a1a1a">
-+    <meta name="theme-color" content="#EFF0F2">
-     <link rel="manifest" href="./manifest.json">
- 
-     <title>液态玻璃通讯</title>
-@@ -17,16 +17,19 @@
+@@ -18,17 +17,16 @@
      
      <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
      
--    <link rel="stylesheet" href="./css/style.css?v=10">
--    <script src="./js/chat.js?v=10"></script>
--    <script src="./js/call.js?v=10"></script>
--    <script src="./js/map.js?v=10"></script>
--    <script src="./js/transfer.js?v=10"></script>
-+    <link rel="stylesheet" href="./css/style.css?v=17">
-+    <script src="./js/chat.js?v=12"></script>
-+    <script src="./js/call.js?v=12"></script>
-+    <script src="./js/map.js?v=12"></script>
-+    <script src="./js/transfer.js?v=12"></script>
+-    <!-- 版本号更新到 v=14 -->
+-    <link rel="stylesheet" href="./css/style.css?v=14">
+-    <script src="./js/chat.js?v=14"></script>
+-    <script src="./js/call.js?v=14"></script>
+-    <script src="./js/map.js?v=14"></script>
+-    <script src="./js/transfer.js?v=14"></script>
++    <link rel="stylesheet" href="./css/style.css?v=20">
++    <script src="./js/chat.js?v=20"></script>
++    <script src="./js/call.js?v=20"></script>
++    <script src="./js/map.js?v=20"></script>
++    <script src="./js/transfer.js?v=20"></script>
  </head>
  <body class="font-sans antialiased overflow-hidden">
  
 -    <!-- 根容器 -->
 -    <div class="pwa-root" 
-+    <!-- 1. 物理满屏全景壁纸层：穿透 iOS 底部安全区，无黑边无白边 -->
-+    <div class="app-wallpaper-layer" aria-hidden="true"></div>
-+
-+    <!-- 2. PWA 交互 UI 容器 -->
++    <!-- 根容器：顶天立地，完全透明透出 body 壁纸 -->
 +    <div class="pwa-root flex flex-col relative" 
           x-data="{ ...chatApp(), ...callManager(), ...mapManager(), ...transferManager() }" 
           x-init="initChat(); initCall();"
           @beforeunload.window="stopTimer(); stopCamera(); if(recognition) recognition.stop();">
-@@ -35,7 +38,7 @@
+@@ -37,7 +35,7 @@
          <input type="file" id="native-camera-picker" accept="image/*" capture="environment" class="hidden" @change="handleImageUpload($event)">
  
          <!-- ================= 1. 聊天主界面 ================= -->
@@ -184,21 +218,21 @@ index 9484999..0e47f0f 100644
               :class="callState !== 'idle' && !isMinimized ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'">
              
              <!-- 顶部固定栏 -->
-@@ -44,7 +47,7 @@
+@@ -46,7 +44,7 @@
                      <button class="p-1 ml-0 text-black hover:text-black transition-colors rounded-full hover:bg-white/20 shrink-0" @click="alert('执行返回操作')">
                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                      </button>
 -                    <img src="https://i.ibb.co/3mf7FgyL/IMG-6559.jpg" class="w-8 h-8 rounded-full object-cover mx-3 shrink-0 shadow-sm">
-+                    <img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover mx-3 shrink-0 shadow-sm">
++                    <div class="msg-avatar-wrapper shrink-0"><img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover mx-3 shadow-sm"></div>
                      <div class="flex-1 min-w-0 flex flex-col justify-center pl-1 pr-3">
                          <span class="text-gray-900 font-bold text-[14px] truncate">Yosali</span>
                          <span class="text-gray-700/80 text-[10px] mt-0.5 truncate">
-@@ -89,14 +92,14 @@
+@@ -91,14 +89,14 @@
                              <div class="flex flex-col w-fit" :class="msg.sender === 'me' ? 'items-end' : 'items-start'">
                                  <div class="flex gap-2.5 mb-1.5" :class="msg.sender === 'me' ? 'items-center' : 'items-start'">
                                      <template x-if="msg.sender === 'yosali'">
 -                                        <img src="https://i.ibb.co/3mf7FgyL/IMG-6559.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm mt-0.5">
-+                                        <img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm mt-0.5">
++                                        <div class="msg-avatar-wrapper shrink-0"><img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover shadow-sm mt-0.5"></div>
                                      </template>
                                      <div class="flex flex-col text-[11px] text-gray-600 font-medium leading-tight" :class="msg.sender === 'me' ? 'items-end' : 'items-start'">
                                          <span x-show="msg.sender === 'yosali'" class="text-gray-800 font-bold mb-0.5">Yosali</span>
@@ -206,59 +240,112 @@ index 9484999..0e47f0f 100644
                                      </div>
                                      <template x-if="msg.sender === 'me'">
 -                                        <img src="https://i.ibb.co/BKtnrG9B/IMG-6557.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm bg-gray-200">
-+                                        <img src="./assets/images/me.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm bg-gray-200">
++                                        <div class="msg-avatar-wrapper shrink-0"><img src="./assets/images/me.jpg" class="w-8 h-8 rounded-full object-cover shadow-sm bg-gray-200"></div>
                                      </template>
                                  </div>
                                  <div class="border-t border-dashed border-gray-400/60 w-full mb-2.5"></div>
-@@ -164,13 +167,12 @@
+@@ -166,30 +164,26 @@
              </div>
  
              <!-- ================= 底部输入区 ================= -->
 -            <div class="shrink-0 w-full z-50 bg-transparent relative">
 +            <div class="shrink-0 w-full z-50 mt-auto bg-transparent relative">
                  
--                <!-- 修复：因为 pwa-root 没到底，所以去掉 env() 的叠加，直接用 pb-4 -->
--                <div class="px-4 pb-4">
-+                <div class="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+-                <!-- 核心修正：使用 pwa-bottom-safe 替换之前的 pb-4 -->
+                 <div class="px-4 pwa-bottom-safe">
                      <div class="wet-glass rounded-[26px] h-[52px] p-1 px-2 flex items-center gap-1.5 w-full shadow-lg">
 -                        <button class="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"><img src="https://i.ibb.co/tTcTvwCX/731-20261005164940.png" class="w-6 h-6 object-contain"></button>
--                        <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[15px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
+-                        
+-                        <!-- 关键防放大：text-[16px] 严禁低于 16px -->
 +                        <button class="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"><img src="./assets/images/icon-sound.png" class="w-6 h-6 object-contain"></button>
-+                        <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[16px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
+                         <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[16px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
                          
                          <template x-if="!hasText()">
                              <div class="flex items-center gap-1 shrink-0">
-@@ -179,7 +181,7 @@
-                                         @touchstart.prevent
-                                         @click="showToolsPanel = !showToolsPanel" 
-                                         class="p-1 rounded-full hover:bg-white/20">
+-                                <!-- 核心修正：使用 @pointerdown.prevent 实现 0 延迟响应，并加上 touch-none 防误触 -->
+                                 <button type="button" 
+                                         @pointerdown.prevent="showToolsPanel = !showToolsPanel" 
+                                         class="p-1 rounded-full hover:bg-white/20 touch-none">
 -                                    <img src="https://i.ibb.co/LdWwXVF4/731-20261005164859.png" class="w-6 h-6 object-contain">
 +                                    <img src="./assets/images/icon-face.png" class="w-6 h-6 object-contain">
                                  </button>
                                  
                                  <button type="button" 
-@@ -188,7 +190,7 @@
-                                         @click="showToolsPanel = !showToolsPanel;" 
+                                         @pointerdown.prevent="showToolsPanel = !showToolsPanel;" 
                                          :class="{'bg-white/30': showToolsPanel}" 
-                                         class="p-1 rounded-full hover:bg-white/20 flex items-center justify-center shrink-0 w-8 h-8">
+                                         class="p-1 rounded-full hover:bg-white/20 flex items-center justify-center shrink-0 w-8 h-8 touch-none">
 -                                    <img src="https://i.ibb.co/WNDxx6q1/739-20261031094001.png" class="w-7 h-7 object-contain scale-125">
 +                                    <img src="./assets/images/icon-plus.png" class="w-7 h-7 object-contain scale-125">
                                  </button>
                              </div>
                          </template>
-@@ -203,9 +205,9 @@
+@@ -204,39 +198,36 @@
                  </div>
  
                  <div class="w-full overflow-hidden transition-[max-height] duration-300 ease-out transform-gpu will-change-[max-height] max-h-0" 
 -                     :class="showToolsPanel ? 'max-h-[330px]' : 'max-h-0'">
 +                     :class="showToolsPanel ? 'max-h-[380px]' : 'max-h-0'">
                      <div>
--                        <div class="bg-[#f3f4f6] w-full rounded-t-[28px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-white/60 flex flex-col h-[330px]" @touchstart="handleTouchStart($event)" @touchend="handleTouchEnd($event)">
+-                        <!-- 工具箱底部加 pwa-panel-bottom-safe，防止撑破安全区 -->
+-                        <div class="bg-[#f3f4f6] w-full rounded-t-[28px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-white/60 flex flex-col pwa-panel-bottom-safe" @touchstart="handleTouchStart($event)" @touchend="handleTouchEnd($event)">
+-                            <div class="h-[330px] flex flex-col w-full">
+-                                <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
+-                                <div class="flex-1 relative px-4 pt-2">
+-                                    <div x-show="currentPage === 0" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
+-                                        <template x-for="(item, index) in page1" :key="index">
+-                                            <div class="flex flex-col items-center gap-1.5 cursor-pointer group" @click="handleToolClick(item)">
+-                                                <div class="w-[64px] h-[64px] bg-white rounded-[22px] flex items-center justify-center shadow-sm group-active:scale-95 transition-transform">
+-                                                    <img :src="item.icon" class="w-10 h-10 object-contain opacity-[0.65] grayscale">
+-                                                </div>
+-                                                <span class="text-[13px] text-gray-800 font-medium whitespace-nowrap" x-text="item.name"></span>
 +                        <div class="bg-[#f3f4f6] w-full rounded-t-[28px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t border-white/60 flex flex-col pwa-panel-bottom-safe min-h-[330px]" @touchstart="handleTouchStart($event)" @touchend="handleTouchEnd($event)">
-                             <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
-                             <div class="flex-1 relative px-4 pt-2">
-                                 <div x-show="currentPage === 0" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
-@@ -332,7 +334,7 @@
++                            <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
++                            <div class="flex-1 relative px-4 pt-2">
++                                <div x-show="currentPage === 0" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
++                                    <template x-for="(item, index) in page1" :key="index">
++                                        <div class="flex flex-col items-center gap-1.5 cursor-pointer group" @click="handleToolClick(item)">
++                                            <div class="w-[64px] h-[64px] bg-white rounded-[22px] flex items-center justify-center shadow-sm group-active:scale-95 transition-transform">
++                                                <img :src="item.icon" class="w-10 h-10 object-contain opacity-[0.65] grayscale">
+                                             </div>
+-                                        </template>
+-                                    </div>
+-                                    <div x-show="currentPage === 1" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full absolute top-2 left-0 px-4">
+-                                        <template x-for="(item, index) in page2" :key="index">
+-                                            <div class="flex flex-col items-center gap-1.5 cursor-pointer group" @click="handleToolClick(item)">
+-                                                <div class="w-[64px] h-[64px] bg-white rounded-[22px] flex items-center justify-center shadow-sm group-active:scale-95 transition-transform">
+-                                                    <img :src="item.icon" class="w-10 h-10 object-contain opacity-[0.65] grayscale">
+-                                                </div>
+-                                                <span class="text-[13px] text-gray-800 font-medium whitespace-nowrap" x-text="item.name"></span>
++                                            <span class="text-[13px] text-gray-800 font-medium whitespace-nowrap" x-text="item.name"></span>
++                                        </div>
++                                    </template>
++                                </div>
++                                <div x-show="currentPage === 1" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full absolute top-2 left-0 px-4">
++                                    <template x-for="(item, index) in page2" :key="index">
++                                        <div class="flex flex-col items-center gap-1.5 cursor-pointer group" @click="handleToolClick(item)">
++                                            <div class="w-[64px] h-[64px] bg-white rounded-[22px] flex items-center justify-center shadow-sm group-active:scale-95 transition-transform">
++                                                <img :src="item.icon" class="w-10 h-10 object-contain opacity-[0.65] grayscale">
+                                             </div>
+-                                        </template>
+-                                    </div>
++                                            <span class="text-[13px] text-gray-800 font-medium whitespace-nowrap" x-text="item.name"></span>
++                                        </div>
++                                    </template>
+                                 </div>
+-                                <div class="flex items-center justify-center pb-8 pt-2 shrink-0">
+-                                    <div class="flex items-center gap-2">
+-                                        <button @click="currentPage = 0" :class="currentPage === 0 ? 'bg-gray-500' : 'bg-gray-300'" class="w-2 h-2 rounded-full transition-colors"></button>
+-                                        <button @click="currentPage = 1" :class="currentPage === 1 ? 'bg-gray-500' : 'bg-gray-300'" class="w-2 h-2 rounded-full transition-colors"></button>
+-                                    </div>
++                            </div>
++                            <div class="flex items-center justify-center pb-8 pt-2 shrink-0">
++                                <div class="flex items-center gap-2">
++                                    <button @click="currentPage = 0" :class="currentPage === 0 ? 'bg-gray-500' : 'bg-gray-300'" class="w-2 h-2 rounded-full transition-colors"></button>
++                                    <button @click="currentPage = 1" :class="currentPage === 1 ? 'bg-gray-500' : 'bg-gray-300'" class="w-2 h-2 rounded-full transition-colors"></button>
+                                 </div>
+                             </div>
+                         </div>
+@@ -336,7 +327,7 @@
              <div class="flex flex-col items-center justify-center flex-1 w-full mt-2 relative z-10 pointer-events-none">
                  <div class="relative flex items-center justify-center w-56 h-56 mb-6 shrink-0 pointer-events-auto">
                      <div class="relative rounded-full border-[3px] border-gray-400/50 shadow-2xl z-10 overflow-hidden" :class="callState === 'receiving' ? 'w-36 h-36' : 'w-28 h-28'">
@@ -267,7 +354,7 @@ index 9484999..0e47f0f 100644
                      </div>
                      <div class="absolute pointer-events-none z-0" :class="callState === 'receiving' ? 'w-36 h-36' : 'w-28 h-28'">
                          <div class="ripple-ring" :class="callState === 'active' ? 'ripple-active' : ''" style="animation-delay: 0s;"></div>
-@@ -384,7 +386,7 @@
+@@ -388,7 +379,7 @@
  
          <!-- ================= 视频通话 ================= -->
          <div x-show="callType === 'video' && callState !== 'idle' && !isMinimized" x-transition.opacity class="fixed inset-0 z-[100] flex flex-col justify-between pt-12 pb-8 px-4 bg-[#121212] overflow-hidden" style="display: none;">
@@ -276,7 +363,7 @@ index 9484999..0e47f0f 100644
              <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none z-0" :class="callState === 'active' ? 'opacity-100' : 'opacity-0'"></div>
              <div class="relative z-10 flex justify-between items-center w-full shrink-0 h-12">
                  <button @click="toggleMinimize()" class="w-12 h-12 rounded-full dark-glass flex items-center justify-center text-white z-20">
-@@ -397,15 +399,15 @@
+@@ -401,15 +392,15 @@
                  <div class="relative w-full h-full bg-[#1a1a1a] flex items-center justify-center">
                      <video x-show="cameraOn" x-ref="videoElement" autoplay playsinline muted class="w-full h-full object-cover transform" :class="isFrontCamera ? 'scale-x-[-1]' : ''"></video>
                      <div x-show="!cameraOn" class="absolute inset-0 w-full h-full flex items-center justify-center">
@@ -295,7 +382,16 @@ index 9484999..0e47f0f 100644
                          <div class="absolute inset-0 bg-black/10 animate-pulse"></div>
                      </div>
                      <h1 class="text-white text-2xl font-bold tracking-widest mt-2">Yosali</h1>
-@@ -519,12 +521,12 @@
+@@ -494,7 +485,7 @@
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                     </button>
+                     <div class="flex-1 dark-glass rounded-full flex items-center px-4 h-12">
+-                        <input type="text" x-ref="textInput" x-model="textMessage" @keydown.enter="sendTextMessage()" placeholder="输入消息..." class="flex-1 bg-transparent text-white text-[16px] outline-none placeholder:text-gray-400">
++                        <input type="text" x-ref="textInput" x-model="textMessage" @keydown.enter="sendTextMessage()" placeholder="输入消息..." class="flex-1 bg-transparent text-white text-[15px] outline-none placeholder:text-gray-400">
+                     </div>
+                     <button @click="sendTextMessage()" class="shrink-0 w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-gray-900 shadow-lg" :class="!textMessage.trim() ? 'opacity-50' : ''">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+@@ -523,12 +514,12 @@
               <div class="absolute top-2.5 left-2.5 w-2.5 h-2.5 rounded-full bg-blue-500 border border-white/50 animate-bounce shadow-sm z-20" x-show="callState === 'calling'"></div>
               <div class="w-[56px] h-[56px] rounded-[14px] overflow-hidden shadow-sm border border-white/50 mb-1.5 pointer-events-none relative z-10 bg-gray-800">
                   <template x-if="callType === 'voice' || (callType === 'video' && callState !== 'active')">
@@ -310,7 +406,7 @@ index 9484999..0e47f0f 100644
                       </div>
                   </template>
               </div>
-@@ -719,6 +721,20 @@
+@@ -723,6 +714,20 @@
      </div>
  
      <script>
@@ -331,16 +427,111 @@ index 9484999..0e47f0f 100644
        if ('serviceWorker' in navigator) {
          window.addEventListener('load', () => {
            navigator.serviceWorker.register('./sw.js').catch(() => {});
-diff --git a/manifest.json b/manifest.json
-index d444c97..bde262d 100644
---- a/manifest.json
-+++ b/manifest.json
-@@ -5,6 +5,6 @@
-   "scope": "./",
-   "display": "standalone",
-   "orientation": "portrait",
--  "background_color": "#1a1a1a",
--  "theme_color": "#1a1a1a"
-+  "background_color": "#EFF0F2",
-+  "theme_color": "#EFF0F2"
- }
+diff --git a/js/call.js b/js/call.js
+index e0f62df..875de3f 100644
+--- a/js/call.js
++++ b/js/call.js
+@@ -56,7 +56,7 @@ document.addEventListener('alpine:init', () => {
+             
+             if (state === 'active') {
+                 this.startTimer();
+-                if (type === 'video') this.startCamera();
++                if (type === 'video') this.startCamera().catch(() => {});
+                 this.initSpeechRecognition();
+             }
+         },
+@@ -64,7 +64,7 @@ document.addEventListener('alpine:init', () => {
+         acceptCall() {
+             this.callState = 'active';
+             this.startTimer();
+-            if (this.callType === 'video') this.startCamera();
++            if (this.callType === 'video') this.startCamera().catch(() => {});
+             this.initSpeechRecognition();
+         },
+ 
+@@ -108,22 +108,36 @@ document.addEventListener('alpine:init', () => {
+ 
+         async startCamera() {
+             if (!this.cameraOn || this.isStartingCamera) return;
++            if (!navigator?.mediaDevices?.getUserMedia) {
++                console.warn('[Camera] getUserMedia is not supported in this environment');
++                this.cameraOn = false;
++                return;
++            }
+             this.isStartingCamera = true;
+             this.stopCamera(); 
+ 
+             try {
+-                const constraints = { video: { facingMode: this.isFrontCamera ? 'user' : 'environment' }, audio: false };
+-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
++                const constraints = { 
++                    video: { facingMode: this.isFrontCamera ? 'user' : 'environment' }, 
++                    audio: false 
++                };
++                let stream;
++                try {
++                    stream = await navigator.mediaDevices.getUserMedia(constraints);
++                } catch {
++                    // Fallback to generic video constraint
++                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
++                }
+                 
+                 if (!this.cameraOn || this.callState === 'idle') {
+-                    stream.getTracks().forEach(track => track.stop());
++                    if (stream) stream.getTracks().forEach(track => track.stop());
+                     this.isStartingCamera = false;
+                     return;
+                 }
+                 this.mediaStream = stream;
+                 this.bindVideoStream();
+             } catch (err) { 
+-                console.error(err);
++                console.warn('[Camera] Camera access was denied or device not found:', err?.message || err);
+                 this.cameraOn = false; 
+             } finally {
+                 this.isStartingCamera = false;
+diff --git a/sw.js b/sw.js
+index 7fa5f0c..dafdea5 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,35 +1,9 @@
+ // ==========================================
+-// 开发测试专用 Service Worker
+-// 作用：仅仅为了让 PWA 生效，绝对不缓存你的代码
+-// 以确保你每次打开都能看到 GitHub 上最新的修改
++// 极简 Service Worker（严格按照 iOS PWA 实战方案）
++// 作用：激活 PWA 特性，绝对不拦截缓存，确保手机每次刷新获取最新代码
+ // ==========================================
+ 
+-self.addEventListener('install', (event) => {
+-  // 强制让新的 Service Worker 立即接管，跳过等待
+-  self.skipWaiting();
+-});
++self.addEventListener('install', () => self.skipWaiting());
++self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
++// fetch 留空，让所有网络请求走默认
+ 
+-self.addEventListener('activate', (event) => {
+-  // 激活时，清空所有可能存在的旧版本缓存，防止历史遗留问题
+-  event.waitUntil(
+-    caches.keys().then((cacheNames) => {
+-      return Promise.all(
+-        cacheNames.map((cacheName) => {
+-          console.log('清理旧缓存:', cacheName);
+-          return caches.delete(cacheName);
+-        })
+-      );
+-    }).then(() => {
+-      // 立即控制当前打开的所有页面
+-      self.clients.claim();
+-    })
+-  );
+-});
+-
+-self.addEventListener('fetch', (event) => {
+-  // 只要不是 GET 请求就不管
+-  if (event.request.method !== 'GET') return;
+-
+-  // 对于所有请求，直接去网络拿最新的，完全不拦截！
+-  // 这样你在 GitHub 上改了代码，手机上刷新一下就能看到
+-});

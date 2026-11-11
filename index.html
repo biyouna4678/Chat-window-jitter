@@ -7,7 +7,7 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#EFF0F2">
+    <meta name="theme-color" content="#1a1a1a">
     <link rel="manifest" href="./manifest.json">
 
     <title>液态玻璃通讯</title>
@@ -17,18 +17,15 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="./css/style.css?v=17">
-    <script src="./js/chat.js?v=12"></script>
-    <script src="./js/call.js?v=12"></script>
-    <script src="./js/map.js?v=12"></script>
-    <script src="./js/transfer.js?v=12"></script>
+    <link rel="stylesheet" href="./css/style.css?v=20">
+    <script src="./js/chat.js?v=20"></script>
+    <script src="./js/call.js?v=20"></script>
+    <script src="./js/map.js?v=20"></script>
+    <script src="./js/transfer.js?v=20"></script>
 </head>
 <body class="font-sans antialiased overflow-hidden">
 
-    <!-- 1. 物理满屏全景壁纸层：穿透 iOS 底部安全区，无黑边无白边 -->
-    <div class="app-wallpaper-layer" aria-hidden="true"></div>
-
-    <!-- 2. PWA 交互 UI 容器 -->
+    <!-- 根容器：顶天立地，完全透明透出 body 壁纸 -->
     <div class="pwa-root flex flex-col relative" 
          x-data="{ ...chatApp(), ...callManager(), ...mapManager(), ...transferManager() }" 
          x-init="initChat(); initCall();"
@@ -47,7 +44,7 @@
                     <button class="p-1 ml-0 text-black hover:text-black transition-colors rounded-full hover:bg-white/20 shrink-0" @click="alert('执行返回操作')">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                     </button>
-                    <img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover mx-3 shrink-0 shadow-sm">
+                    <div class="msg-avatar-wrapper shrink-0"><img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover mx-3 shadow-sm"></div>
                     <div class="flex-1 min-w-0 flex flex-col justify-center pl-1 pr-3">
                         <span class="text-gray-900 font-bold text-[14px] truncate">Yosali</span>
                         <span class="text-gray-700/80 text-[10px] mt-0.5 truncate">
@@ -92,14 +89,14 @@
                             <div class="flex flex-col w-fit" :class="msg.sender === 'me' ? 'items-end' : 'items-start'">
                                 <div class="flex gap-2.5 mb-1.5" :class="msg.sender === 'me' ? 'items-center' : 'items-start'">
                                     <template x-if="msg.sender === 'yosali'">
-                                        <img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm mt-0.5">
+                                        <div class="msg-avatar-wrapper shrink-0"><img src="./assets/images/yosali.jpg" class="w-8 h-8 rounded-full object-cover shadow-sm mt-0.5"></div>
                                     </template>
                                     <div class="flex flex-col text-[11px] text-gray-600 font-medium leading-tight" :class="msg.sender === 'me' ? 'items-end' : 'items-start'">
                                         <span x-show="msg.sender === 'yosali'" class="text-gray-800 font-bold mb-0.5">Yosali</span>
                                         <span x-text="msg.time"></span>
                                     </div>
                                     <template x-if="msg.sender === 'me'">
-                                        <img src="./assets/images/me.jpg" class="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm bg-gray-200">
+                                        <div class="msg-avatar-wrapper shrink-0"><img src="./assets/images/me.jpg" class="w-8 h-8 rounded-full object-cover shadow-sm bg-gray-200"></div>
                                     </template>
                                 </div>
                                 <div class="border-t border-dashed border-gray-400/60 w-full mb-2.5"></div>
@@ -169,7 +166,7 @@
             <!-- ================= 底部输入区 ================= -->
             <div class="shrink-0 w-full z-50 mt-auto bg-transparent relative">
                 
-                <div class="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                <div class="px-4 pwa-bottom-safe">
                     <div class="wet-glass rounded-[26px] h-[52px] p-1 px-2 flex items-center gap-1.5 w-full shadow-lg">
                         <button class="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"><img src="./assets/images/icon-sound.png" class="w-6 h-6 object-contain"></button>
                         <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="flex-1 min-w-0 bg-transparent py-2 px-1 text-[16px] leading-snug text-gray-900 outline-none placeholder:text-gray-500 resize-none max-h-[38px] overflow-y-auto"></textarea>
@@ -177,19 +174,15 @@
                         <template x-if="!hasText()">
                             <div class="flex items-center gap-1 shrink-0">
                                 <button type="button" 
-                                        @mousedown.prevent 
-                                        @touchstart.prevent
-                                        @click="showToolsPanel = !showToolsPanel" 
-                                        class="p-1 rounded-full hover:bg-white/20">
+                                        @pointerdown.prevent="showToolsPanel = !showToolsPanel" 
+                                        class="p-1 rounded-full hover:bg-white/20 touch-none">
                                     <img src="./assets/images/icon-face.png" class="w-6 h-6 object-contain">
                                 </button>
                                 
                                 <button type="button" 
-                                        @mousedown.prevent 
-                                        @touchstart.prevent
-                                        @click="showToolsPanel = !showToolsPanel;" 
+                                        @pointerdown.prevent="showToolsPanel = !showToolsPanel;" 
                                         :class="{'bg-white/30': showToolsPanel}" 
-                                        class="p-1 rounded-full hover:bg-white/20 flex items-center justify-center shrink-0 w-8 h-8">
+                                        class="p-1 rounded-full hover:bg-white/20 flex items-center justify-center shrink-0 w-8 h-8 touch-none">
                                     <img src="./assets/images/icon-plus.png" class="w-7 h-7 object-contain scale-125">
                                 </button>
                             </div>

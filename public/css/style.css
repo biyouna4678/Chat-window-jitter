@@ -211,74 +211,68 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .state-returned .amount::after { content: ''; position: absolute; top: 50%; left: -2px; right: -2px; height: 1px; background-color: rgba(255, 255, 255, 0.7); transform: translateY(-50%); }
 .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
 
-/* ================= 5. PWA 全屏无黑边无白边终极解决方案 ================= */
+/* ================= 5. PWA 全屏与兼容性解决方案（实战复盘标准版） ================= */
+/* 1. 页面死锁，禁止整体滚动 */
 html {
-  width: 100%;
-  height: 100%;
-  min-height: 100%;
-  margin: 0;
-  padding: 0;
-  overscroll-behavior: none;
-  /* 兜底色：精准匹配高清壁纸浅银白色 (#EFF0F2)，无论首屏还是过渡均无缝融合 */
-  background-color: #EFF0F2 !important;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none; /* 阻止整体页面橡皮筋回弹 */
+    background-color: #1a1a1a; /* 最底层的兜底色 */
 }
 
+/* 2. 背景层铺满物理屏幕（不要在 body 加任何 padding） */
 body {
-  width: 100%;
-  height: 100%;
-  min-height: 100%;
-  margin: 0;
-  padding: 0;
-  background-color: #EFF0F2 !important;
-  overflow: hidden;
-  touch-action: pan-x pan-y;
-  -webkit-text-size-adjust: 100%;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh; /* 核心：绝对不要用 100dvh */
+    overflow: hidden;
+    overscroll-behavior: none;
+    background-image: url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: transparent; /* 保持透明，露出 html 的兜底色 */
+    touch-action: manipulation; /* 禁用双击缩放 */
 }
 
-/* 物理屏幕穿透全景壁纸层：上下各延伸冗余量，彻底穿透 iOS 顶部刘海/灵动岛与底部 Home Indicator */
-.app-wallpaper-layer {
-  position: fixed;
-  top: -20px;
-  left: 0;
-  right: 0;
-  bottom: -80px;
-  width: 100%;
-  height: calc(100% + 100px);
-  height: calc(100vh + 100px);
-  height: calc(100lvh + 100px);
-  min-height: calc(100% + 100px);
-  background-image: url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg');
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  pointer-events: none;
-  z-index: 0;
-  will-change: transform;
-}
-
-/* PWA UI 容器：保持透明，不遮挡底层壁纸，承载所有界面交互与毛玻璃 */
+/* 3. 根容器顶天立地 */
 .pwa-root {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  z-index: 10;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: transparent;
 }
 
+/* 顶部安全区（刘海/灵动岛） */
 .pwa-top-safe {
-  padding-top: max(16px, env(safe-area-inset-top));
+    padding-top: max(12px, env(safe-area-inset-top));
 }
 
+/* 底部安全区（Home Indicator 小黑条） */
+.pwa-bottom-safe {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* 展开工具面板时的底部避让 */
+.pwa-panel-bottom-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 聊天列表滚动优化 */
 #chat-scroll {
-  -webkit-overflow-scrolling: touch;
-  will-change: transform;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain; /* 核心：禁止滚动穿透到外层 body */
+}
+
+/* 图片/头像的“物理防御”：抹杀事件流，彻底杜绝 iOS 连续点击触发隐藏放大 Bug */
+.msg-avatar-wrapper, 
+.msg-avatar-wrapper img {
+    pointer-events: none !important;
+    touch-action: none !important;
+    -webkit-user-drag: none !important;
 }
 
 /* 桌面端大屏居中限制 */
@@ -288,20 +282,13 @@ body {
     justify-content: center;
     background: #e5e7eb !important;
   }
-  .app-wallpaper-layer,
   .pwa-root {
-    position: fixed;
-    top: 0;
-    bottom: 0;
+    position: absolute;
+    top: 0; bottom: 0;
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
     max-width: 480px;
     box-shadow: 0 0 40px rgba(0,0,0,0.15);
-  }
-  .app-wallpaper-layer {
-    height: 100%;
-    min-height: 100%;
-    bottom: 0;
   }
 }
