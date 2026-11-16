@@ -59,7 +59,8 @@
             get currentMenuOptions() {
                 if (this.currentTargetMsgId == null) return { page1: [], page2: [] };
                 const msg = this.currentMessages.find(m => m.id === this.currentTargetMsgId);
-                return (msg && this.menuOptionsMap[msg.role]) || { page1: [], page2: [] };
+                const roleKey = msg ? (msg.role || msg.sender) : null;
+                return (roleKey && this.menuOptionsMap[roleKey]) || { page1: [], page2: [] };
             },
 
             /* ============ 跨页面返回线上 ============ */
@@ -130,7 +131,8 @@
             /* ============ 渲染辅助 ============ */
             rowClasses(msg) {
                 const c = [];
-                if (msg.role === 'narration') c.push('narration');
+                if (msg.role === 'system' || msg.sender === 'system') c.push('system');
+                else if (msg.role === 'narration') c.push('narration');
                 else if (msg.role === 'ai') c.push('left');
                 else c.push('right');
                 if (this.selectedIds.includes(msg.id)) c.push('selected');
@@ -138,6 +140,7 @@
             },
             chapterClasses(msg) {
                 const c = [];
+                if (msg.role === 'system' || msg.sender === 'system') c.push('system');
                 if (msg.role === 'narration') c.push('narration');
                 if (msg.role === 'user') c.push('right');
                 if (this.selectedIds.includes(msg.id)) c.push('selected');

@@ -1,0 +1,163 @@
+/* ========================================================
+   Youna Phone - 终极自适应液态玻璃 (Liquid Glass) 样式
+   同时用于线上聊天窗口 (index.html) 与线下模式 (offline.html)
+   ======================================================== */
+
+/* --------------------------------------------------------
+   1. 基础透明湿玻璃 (用于普通聊天消息气泡)
+   -------------------------------------------------------- */
+.wet-glass {
+    background: rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(14px) saturate(150%) brightness(104%);
+    backdrop-filter: blur(14px) saturate(150%) brightness(104%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+    border-right-color: rgba(255, 255, 255, 0.25);
+    box-shadow:
+        inset 0 1px 2px 0 rgba(255, 255, 255, 0.65),
+        inset 0 -1px 2px 0 rgba(0, 0, 0, 0.06),
+        0 8px 24px 0 rgba(0, 0, 0, 0.08);
+    transform: translateZ(0);
+    transition: all 0.3s ease;
+}
+
+/* 深色模式：黑曜石高透磨砂 (透出背景的光影) */
+.theme-dark .wet-glass {
+    background: rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-top-color: rgba(255, 255, 255, 0.5);  /* 顶边强烈反光 */
+    border-left-color: rgba(255, 255, 255, 0.3); /* 左边微弱反光 */
+    box-shadow:
+        inset 0 1px 2px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
+        0 8px 24px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* --------------------------------------------------------
+   2. 系统气泡 (居中提示文字，材质更轻薄)
+   -------------------------------------------------------- */
+.sys-bubble {
+    background: rgba(255, 255, 255, 0.2);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    color: #374151;
+    transition: all 0.3s ease;
+    text-wrap: balance; /* 防止系统消息最后一个符号落单 */
+}
+
+/* 深色模式：极轻的液态贴膜，不抢眼但清晰 */
+.theme-dark .sys-bubble {
+    background: rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    backdrop-filter: blur(8px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.3);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* --------------------------------------------------------
+   3. 文字颜色自适应 (根据 .theme-dark 切换)
+   -------------------------------------------------------- */
+/* 浅色模式 */
+.text-header { color: #1f2937; transition: color 0.3s, text-shadow 0.3s; }
+.text-sub { color: #4b5563; transition: color 0.3s, text-shadow 0.3s; }
+.text-bubble { color: #1f2937; } /* 气泡内的文字永远保持深色 */
+
+/* 深色模式：全部反白，并加上柔和的文字阴影保证可读性 */
+.theme-dark .text-header { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+.theme-dark .text-sub { color: #e5e7eb; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.theme-dark .text-bubble { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); }
+.theme-dark .sys-bubble { color: #ffffff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+
+/* --------------------------------------------------------
+   4. 输入框组件专属反色处理
+   -------------------------------------------------------- */
+/* 深色模式下，强制把黑色图标(PNG/SVG)滤成纯白，并去掉原有的灰色半透明 */
+.theme-dark .input-icon {
+    filter: brightness(0) invert(1);
+    opacity: 1 !important;
+}
+
+/* 深色模式下，输入框的占位符文字变白 */
+.theme-dark .input-text::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* --------------------------------------------------------
+   5. 顶部/底部磨砂渐隐层 (遮挡滚动内容)
+   -------------------------------------------------------- */
+.glass-fade-top {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    -webkit-mask: linear-gradient(#000 40%, transparent 100%);
+    mask: linear-gradient(#000 40%, transparent 100%);
+    transition: background 0.3s;
+}
+
+.theme-dark .glass-fade-top {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
+}
+
+.glass-fade-bottom {
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    -webkit-mask: linear-gradient(to bottom, transparent 0%, #000 60%);
+    mask: linear-gradient(to bottom, transparent 0%, #000 60%);
+    transition: background 0.3s;
+}
+
+.theme-dark .glass-fade-bottom {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
+}
+
+/* --------------------------------------------------------
+   6. 补充：工具栏图标磁贴、输入框本体、位置卡片与按钮深色适配
+   -------------------------------------------------------- */
+.theme-dark .input-text {
+    color: #ffffff;
+    caret-color: #ffffff;
+}
+
+.tool-tile {
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.25s ease;
+}
+
+.theme-dark .tool-tile {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.tool-drag-bar {
+    background: rgba(156, 163, 175, 0.55);
+}
+.theme-dark .tool-drag-bar {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.send-action-btn {
+    background: #111827;
+    color: #ffffff;
+}
+.theme-dark .send-action-btn {
+    background: rgba(255, 255, 255, 0.92);
+    color: #111827;
+}
+
+.theme-dark .card-title {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.theme-dark .card-subtitle {
+    color: #e5e7eb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}

@@ -12,6 +12,7 @@
     const USER_SIGNATURE = '你不信来世，蜉蝣也不信明天。';
 
     const DEFAULT_DIALOGUE_MESSAGES = [
+        { id: 0, role: 'system', content: '今夜 00:50 · 线下剧场已连接' },
         { id: 1, role: 'narration', content: '窗外的雨声淅淅沥沥，空气中弥漫着潮湿的青草味。' },
         { id: 2, role: 'ai', content: '凌晨 00:52，水瓶里的水汽也开始失眠。', name: AI_NAME, avatar: AI_AVATAR, signature: AI_SIGNATURE },
         { id: 3, role: 'user', content: '那是「对跖点」的海潮，正在替你倒流回薄荷站台。', name: USER_NAME, avatar: USER_AVATAR, signature: USER_SIGNATURE },
@@ -78,6 +79,15 @@
             ]
         },
         narration: {
+            page1: [
+                { text: '复制', action: 'copy' },
+                { text: '多选', action: 'multi' }
+            ],
+            page2: [
+                { text: '删除', action: 'delete' }
+            ]
+        },
+        system: {
             page1: [
                 { text: '复制', action: 'copy' },
                 { text: '多选', action: 'multi' }

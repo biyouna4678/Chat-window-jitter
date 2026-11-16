@@ -36,6 +36,7 @@
             correctionRules: Data.getDefaultCorrectionRules(),
 
             /* ============ 美化配置 ============ */
+            isDarkMode: false,
             statusText: 'Night reveals stars the daylight cannot show.',
             customCss: '',
             statusBarCss: '',
@@ -158,6 +159,13 @@
                     });
                 }
 
+                // 恢复并同步深浅色模式
+                const hasPresetDark = document.body.classList.contains('theme-dark') || document.documentElement.classList.contains('theme-dark');
+                const prefersDark = Boolean(global.matchMedia && global.matchMedia('(prefers-color-scheme: dark)').matches);
+                const storedDark = global.ChatStorage.load(global.ChatStorage.KEYS.THEME_DARK, null);
+                this.isDarkMode = storedDark !== null ? Boolean(storedDark) : (hasPresetDark || prefersDark);
+                global.ChatStorage.applyDarkMode(this.isDarkMode);
+
                 // 恢复自定义壁纸
                 const savedBg = global.ChatStorage.load(global.ChatStorage.KEYS.OFFLINE_WALLPAPER, null);
                 if (savedBg) {
@@ -174,6 +182,16 @@
                 // 注入自定义 CSS 与状态栏 CSS
                 this.applyCustomCSS();
                 this.applyStatusBarCSS();
+            },
+
+            toggleDarkMode() {
+                this.isDarkMode = !this.isDarkMode;
+                if (global.ChatStorage) {
+                    global.ChatStorage.setDarkMode(this.isDarkMode);
+                } else {
+                    document.body.classList.toggle('theme-dark', this.isDarkMode);
+                    document.documentElement.classList.toggle('theme-dark', this.isDarkMode);
+                }
             },
 
             /* ============ 世界书三态切换 ============ */

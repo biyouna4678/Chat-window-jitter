@@ -12,17 +12,18 @@
 
     <title>线下剧场 - 液态玻璃通讯</title>
 
-    <link rel="stylesheet" href="./css/offline-base.css?v=1">
-    <link rel="stylesheet" href="./css/offline-components.css?v=1">
+    <link rel="stylesheet" href="./css/offline-base.css?v=3">
+    <link rel="stylesheet" href="./css/offline-components.css?v=3">
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=3">
     <style id="user-custom-css"></style>
     <style id="user-statusbar-css"></style>
 
     <!-- 共享存储与线下模块化脚本 -->
-    <script src="./js/storage.js?v=1"></script>
-    <script src="./js/offline-data.js?v=1"></script>
-    <script src="./js/offline-chat.js?v=1"></script>
-    <script src="./js/offline-settings.js?v=1"></script>
-    <script src="./js/offline-app.js?v=1"></script>
+    <script src="./js/storage.js?v=3"></script>
+    <script src="./js/offline-data.js?v=3"></script>
+    <script src="./js/offline-chat.js?v=3"></script>
+    <script src="./js/offline-settings.js?v=3"></script>
+    <script src="./js/offline-app.js?v=3"></script>
 
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
@@ -30,15 +31,17 @@
 <body
     x-data="offlineApp()"
     x-init="init()"
-    :class="{ 'mode-chapter': currentMode === 'chapter', 'multi-select-mode': isMultiSelectMode }"
+    :class="{ 'mode-chapter': currentMode === 'chapter', 'multi-select-mode': isMultiSelectMode, 'theme-dark': isDarkMode }"
 >
     <div class="bg-layer" aria-hidden="true"></div>
 
     <div class="main-container">
+        <div class="glass-fade-top offline-fade-top" aria-hidden="true"></div>
+
         <header class="top-header">
             <div class="nav-bar">
                 <div class="nav-btn icon-only" id="btn-header-close" x-show="!isMultiSelectMode" @click="goBackToOnline()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -46,7 +49,7 @@
                 <div class="nav-btn" x-show="isMultiSelectMode" @click="cancelMultiSelect()" x-cloak>取消</div>
 
                 <div class="nav-btn icon-only" id="open-settings" x-show="!isMultiSelectMode" @click="showSettingsPanel = true">
-                    <svg viewBox="0 0 24 24" fill="#1a1a1a">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
                         <circle cx="5" cy="12" r="2"></circle>
                         <circle cx="12" cy="12" r="2"></circle>
                         <circle cx="19" cy="12" r="2"></circle>
@@ -62,7 +65,7 @@
                 </div>
             </div>
             <div class="header-divider"></div>
-            <div class="status-text" x-text="statusText"></div>
+            <div class="status-text text-sub" x-text="statusText"></div>
         </header>
 
         <!-- 小剧场自定义 HTML 渲染槽 -->
@@ -83,7 +86,7 @@
                         <div class="wet-glass msg-avatar-wrapper" x-show="msg.role === 'ai'"><img :src="msg.avatar" alt="avatar"></div>
 
                         <!-- 气泡内容 -->
-                        <div class="wet-glass bubble"
+                        <div class="wet-glass bubble text-bubble"
                              x-show="msg.role === 'ai' || msg.role === 'user'"
                              :class="{ pressing: pressingMsgId === msg.id }"
                              x-text="msg.content"
@@ -104,6 +107,17 @@
                              @touchend="endPress"
                              @touchmove="cancelPress"
                              @contextmenu.prevent="showMenuFromEvent($event, msg, $el)"></div>
+
+                        <!-- 系统消息：居中，无头像，使用专属液态贴纸材质 -->
+                        <div class="sys-bubble-row" x-show="msg.role === 'system' || msg.sender === 'system'">
+                            <div class="sys-bubble"
+                                 :class="{ pressing: pressingMsgId === msg.id }"
+                                 x-text="msg.content || msg.text"
+                                 @touchstart="startPress($event, msg, $el)"
+                                 @touchend="endPress"
+                                 @touchmove="cancelPress"
+                                 @contextmenu.prevent="showMenuFromEvent($event, msg, $el)"></div>
+                        </div>
                     </div>
                 </template>
 
@@ -116,6 +130,17 @@
                          :data-id="msg.id"
                          @click="handleRowClick($event, msg)">
 
+                        <!-- 系统消息：居中，无头像，使用专属液态贴纸材质 -->
+                        <div class="sys-bubble-row" x-show="msg.role === 'system' || msg.sender === 'system'">
+                            <div class="sys-bubble"
+                                 :class="{ pressing: pressingMsgId === msg.id }"
+                                 x-text="msg.content || msg.text"
+                                 @touchstart="startPress($event, msg, $el)"
+                                 @touchend="endPress"
+                                 @touchmove="cancelPress"
+                                 @contextmenu.prevent="showMenuFromEvent($event, msg, $el)"></div>
+                        </div>
+
                         <!-- 叙述文本 -->
                         <div class="narration-text"
                              x-show="msg.role === 'narration'"
@@ -126,16 +151,16 @@
                              @touchmove="cancelPress"
                              @contextmenu.prevent="showMenuFromEvent($event, msg, $el)"></div>
 
-                        <div class="chapter-user-profile" :class="{ 'profile-right': msg.role === 'user' }" x-show="msg.role !== 'narration'">
+                        <div class="chapter-user-profile" :class="{ 'profile-right': msg.role === 'user' }" x-show="msg.role !== 'narration' && msg.role !== 'system' && msg.sender !== 'system'">
                             <div class="chapter-avatar-glass"><img :src="msg.avatar" :alt="msg.name"></div>
                             <div class="profile-info-group">
-                                <div class="profile-top-row"><span class="profile-name" x-text="msg.name"></span></div>
-                                <div class="profile-signature" x-text="msg.signature"></div>
+                                <div class="profile-top-row"><span class="profile-name text-header" x-text="msg.name"></span></div>
+                                <div class="profile-signature text-sub" x-text="msg.signature"></div>
                             </div>
                         </div>
 
-                        <div class="wet-glass-light chapter-bubble" :class="{ 'right': msg.role === 'user' }" x-show="msg.role !== 'narration'">
-                            <p class="chapter-paragraph"
+                        <div class="wet-glass chapter-bubble" :class="{ 'right': msg.role === 'user' }" x-show="msg.role !== 'narration' && msg.role !== 'system' && msg.sender !== 'system'">
+                            <p class="chapter-paragraph text-bubble"
                                :class="{ pressing: pressingMsgId === msg.id }"
                                x-html="msg.content"
                                @touchstart="startPress($event, msg, $el)"
@@ -149,9 +174,10 @@
         </main>
 
         <div class="bottom-input-container">
-            <div class="glass-input-wrapper" :class="{ active: chatInput.trim().length > 0 }">
+            <div class="glass-fade-bottom offline-fade-bottom" aria-hidden="true"></div>
+            <div class="wet-glass glass-input-wrapper" :class="{ active: chatInput.trim().length > 0 }">
                 <div class="btn-ai" @pointerdown.prevent="showToast('已就绪：当前人设与世界书约束生效中')">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="input-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
                         <path d="M20 3v4"></path>
                         <path d="M22 5h-4"></path>
@@ -159,9 +185,9 @@
                         <path d="M5 18H3"></path>
                     </svg>
                 </div>
-                <input type="text" class="glass-input" id="chatInput" x-model="chatInput" placeholder="输入消息..." @keydown.enter.prevent="sendMessage()">
+                <textarea rows="1" class="glass-input input-text text-bubble" id="chatInput" x-model="chatInput" placeholder="输入消息..." @keydown.enter.prevent="sendMessage()"></textarea>
                 <div class="btn-send" id="btnSend" @pointerdown.prevent="sendMessage()">
-                    <svg class="icon-arrow" viewBox="0 0 24 24">
+                    <svg class="icon-arrow input-icon" viewBox="0 0 24 24">
                         <line x1="12" y1="19" x2="12" y2="5"></line>
                         <polyline points="5 12 12 5 19 12"></polyline>
                     </svg>
@@ -396,6 +422,13 @@
             <!-- 面板 2：美化 -->
             <div class="panel" :class="{ active: activeTab === 'beauty' }">
                 <div class="settings-group">
+                    <div class="settings-item">
+                        <div>
+                            <div style="font-size: 15px;">深色液态玻璃模式</div>
+                            <div style="font-size: 11px; color: #888; margin-top: 2px;">与线上窗口同步深浅色质感与文本反白</div>
+                        </div>
+                        <div class="ios-switch" :class="{ on: isDarkMode }" @click="toggleDarkMode()"></div>
+                    </div>
                     <div class="settings-item" @click="$refs.wallpaperInput.click()">
                         <span>更换壁纸</span>
                         <span class="arrow">❯</span>

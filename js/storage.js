@@ -13,8 +13,31 @@
         OFFLINE_WALLPAPER: PREFIX + 'offline_wallpaper',
         OFFLINE_FONT: PREFIX + 'offline_custom_font',
         OFFLINE_MEMORY_DB: PREFIX + 'offline_memory_db',
-        MEMORY_BRIDGE_SUMMARY: PREFIX + 'memory_bridge_summary'
+        MEMORY_BRIDGE_SUMMARY: PREFIX + 'memory_bridge_summary',
+        THEME_DARK: PREFIX + 'theme_dark'
     };
+
+    function applyDarkMode(enabled) {
+        if (typeof document === 'undefined') return;
+        const isDark = Boolean(enabled);
+        if (document.body) {
+            document.body.classList.toggle('theme-dark', isDark);
+        }
+        if (document.documentElement) {
+            document.documentElement.classList.toggle('theme-dark', isDark);
+        }
+    }
+
+    function getDarkMode() {
+        return Boolean(load(KEYS.THEME_DARK, false));
+    }
+
+    function setDarkMode(enabled) {
+        const isDark = Boolean(enabled);
+        save(KEYS.THEME_DARK, isDark);
+        applyDarkMode(isDark);
+        return isDark;
+    }
 
     function load(key, fallback) {
         try {
@@ -54,6 +77,7 @@
         const recentText = messages
             .slice(-3)
             .map(m => {
+                if (m.sender === 'system') return `[系统] ${m.text || ''}`;
                 if (m.type === 'text') return `${m.sender === 'me' ? '攸攸' : 'Yosali'}: ${m.text}`;
                 if (m.type === 'location') return `[位置分享] ${m.data?.name || ''}`;
                 if (m.type === 'transfer') return `[转账] ¥${m.data?.amount || ''}`;
@@ -82,7 +106,7 @@
         if (!enabled || !Array.isArray(messages) || messages.length === 0) return;
         const last = messages[messages.length - 1];
         const tmp = document.createElement('div');
-        tmp.innerHTML = last.content || '';
+        tmp.innerHTML = last.content || last.text || '';
         const plain = (tmp.innerText || tmp.textContent || '').trim().slice(0, 60);
         if (plain) {
             save(KEYS.MEMORY_BRIDGE_SUMMARY, {
@@ -102,6 +126,9 @@
         load,
         save,
         remove,
+        getDarkMode,
+        setDarkMode,
+        applyDarkMode,
         syncOnlineContext,
         syncOfflineContext
     };

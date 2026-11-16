@@ -1,6 +1,7 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('chatApp', () => ({
         isMenuOpen: false,
+        isDarkMode: false,
         showCallSelector: false,
         messageText: '',
         showToolsPanel: false,
@@ -11,6 +12,7 @@ document.addEventListener('alpine:init', () => {
         previewImageUrl: '',
 
         messages: [
+            { id: 0, type: 'system', sender: 'system', text: '今夜 22:46 · 已进入薄荷站台' },
             { id: 1, type: 'text', sender: 'me', text: '今夜 22:47，雨停在薄荷色的铁轨上。', time: '今夜 22:47' },
             { id: 2, type: 'text', sender: 'yosali', text: '幸福 は 透明色 の まま，', time: '今夜 22:48' },
             { id: 3, type: 'text', sender: 'me', text: '拥有的時候看不見，檢票時才聽見心跳。', time: '今夜 22:49' },
@@ -39,6 +41,37 @@ document.addEventListener('alpine:init', () => {
         ],
 
         initChat() {
+            const hasPresetDark = document.body.classList.contains('theme-dark') || document.documentElement.classList.contains('theme-dark');
+            const prefersDark = Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (window.ChatStorage) {
+                const stored = window.ChatStorage.load(window.ChatStorage.KEYS.THEME_DARK, null);
+                this.isDarkMode = stored !== null ? Boolean(stored) : (hasPresetDark || prefersDark);
+                window.ChatStorage.applyDarkMode(this.isDarkMode);
+            } else {
+                this.isDarkMode = hasPresetDark || prefersDark;
+            }
+            this.scrollToBottom();
+        },
+
+        toggleDarkMode() {
+            this.isDarkMode = !this.isDarkMode;
+            if (window.ChatStorage) {
+                window.ChatStorage.setDarkMode(this.isDarkMode);
+            } else {
+                document.body.classList.toggle('theme-dark', this.isDarkMode);
+                document.documentElement.classList.toggle('theme-dark', this.isDarkMode);
+            }
+        },
+
+        addSystemMessage(text) {
+            const content = String(text || '').trim();
+            if (!content) return;
+            this.messages.push({
+                id: Date.now(),
+                type: 'system',
+                sender: 'system',
+                text: content
+            });
             this.scrollToBottom();
         },
 
