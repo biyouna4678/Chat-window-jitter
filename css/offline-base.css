@@ -1,0 +1,678 @@
+/* ================= 基础全局与防选中 ================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+img, svg {
+    -webkit-user-drag: none;
+}
+
+textarea, input {
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+}
+
+/* 彻底禁止文本选中（含篇章长文本） */
+body *:not(input):not(textarea) {
+    -webkit-user-select: none !important;
+    user-select: none !important;
+}
+
+.chapter-paragraph,
+.chapter-paragraph *,
+.chapter-bubble,
+.chapter-bubble * {
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-drag: none !important;
+}
+
+/* 隐藏滚动条 */
+textarea::-webkit-scrollbar,
+.chat-area::-webkit-scrollbar,
+.settings-content::-webkit-scrollbar,
+.preset-list::-webkit-scrollbar,
+.memory-detail-list::-webkit-scrollbar {
+    display: none;
+}
+textarea,
+.chat-area,
+.settings-content,
+.preset-list,
+.memory-detail-list {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* 避免 Alpine 未初始化闪烁 */
+[x-cloak] {
+    display: none !important;
+}
+
+/* ================= iOS PWA 完美全屏锁死 ================= */
+html {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none; /* 阻止整体页面橡皮筋回弹 */
+    background-color: #1a1a1a; /* 防白闪兜底色 */
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh; /* 绝对不使用 100dvh，防止 PWA 底部被安全区砍断 */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background-color: transparent;
+    touch-action: manipulation; /* 禁用双击缩放 */
+    -webkit-text-size-adjust: 100%;
+}
+
+.bg-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('../assets/images/offline-bg.jpg'), url('./assets/images/offline-bg.jpg'), url('/assets/images/offline-bg.jpg'), url('https://i.ibb.co/C3QwNp7x/IMG-9275.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.main-container {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-color: transparent;
+}
+
+/* ================= 核心玻璃拟态 ================= */
+.wet-glass {
+    background: rgba(255, 255, 255, 0.3);
+    -webkit-backdrop-filter: blur(16px) saturate(160%) brightness(104%);
+    backdrop-filter: blur(16px) saturate(160%) brightness(104%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+    border-right-color: rgba(255, 255, 255, 0.25);
+    box-shadow: inset 0 1px 2px 0 rgba(255, 255, 255, 0.6),
+                inset 0 -1px 2px 0 rgba(0, 0, 0, 0.05),
+                0 8px 24px 0 rgba(0, 0, 0, 0.08);
+    transform: translateZ(0);
+}
+
+.wet-glass-light {
+    background: rgba(255, 255, 255, 0.2);
+    -webkit-backdrop-filter: blur(8px) saturate(140%) brightness(105%);
+    backdrop-filter: blur(8px) saturate(140%) brightness(105%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+    border-right-color: rgba(255, 255, 255, 0.3);
+    box-shadow: inset 0 1px 2px 0 rgba(255, 255, 255, 0.5),
+                inset 0 -1px 2px 0 rgba(0, 0, 0, 0.05),
+                0 10px 24px 0 rgba(0, 0, 0, 0.1);
+    transform: translateZ(0);
+}
+
+/* ================= 顶部 Header 与安全区 ================= */
+.top-header {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: calc(44px + max(16px, env(safe-area-inset-top, 16px)));
+    padding-bottom: 10px;
+    position: relative;
+    flex-shrink: 0;
+    isolation: isolate;
+    transition: padding 0.3s ease;
+}
+
+.nav-bar {
+    position: absolute;
+    top: max(16px, env(safe-area-inset-top, 16px));
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 10;
+}
+
+.nav-btn {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 20px;
+    background: rgba(220, 220, 220, 0.7);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+.nav-btn:active {
+    background: rgba(200, 200, 200, 0.8);
+}
+
+.nav-btn.icon-only {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+}
+.nav-btn.icon-only svg {
+    width: 20px;
+    height: 20px;
+}
+
+body.multi-select-mode .nav-btn.icon-only {
+    display: none !important;
+}
+
+.avatars-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+    position: relative;
+}
+
+.avatar-wrapper {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    backdrop-filter: blur(10px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 3px;
+    z-index: 2;
+    pointer-events: none !important;
+    touch-action: none !important;
+}
+.avatar-wrapper:first-child {
+    margin-right: -16px;
+    z-index: 3;
+}
+.avatar-wrapper:last-child {
+    z-index: 1;
+}
+.avatar-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    transform: translateZ(0);
+    pointer-events: none !important;
+    -webkit-user-drag: none !important;
+}
+
+.center-heart {
+    position: absolute;
+    z-index: 10;
+    width: 24px;
+    height: 24px;
+    background: rgba(30, 30, 30, 0.8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.center-heart svg {
+    width: 10px;
+    height: 10px;
+    fill: #ff4d4d;
+}
+
+.header-divider {
+    width: 60%;
+    height: 1px;
+    background-color: rgba(0, 0, 0, 0.08);
+    margin: 16px auto;
+    transition: all 0.3s ease;
+}
+
+.status-text {
+    font-size: 13px;
+    color: #333333;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-align: center;
+    line-height: 1.4;
+    padding: 0 20px;
+    margin-bottom: 8px;
+    white-space: pre-wrap;
+}
+
+body.mode-chapter .top-header .avatars-container,
+body.mode-chapter .top-header .header-divider,
+body.mode-chapter .top-header .status-text {
+    display: none;
+}
+body.mode-chapter .top-header {
+    padding-top: calc(52px + max(16px, env(safe-area-inset-top, 16px)));
+    padding-bottom: 4px;
+}
+
+/* ================= 小剧场自定义 HTML 插入槽 ================= */
+.custom-theater-slot {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 20px;
+    flex-shrink: 0;
+}
+
+/* ================= 聊天区域 ================= */
+.chat-area {
+    flex: 1;
+    min-height: 0;
+    padding: 10px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain; /* 禁止滚动穿透到外层 body */
+    will-change: transform;
+    transition: padding-bottom 0.3s ease;
+}
+
+body.multi-select-mode .chat-area {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+}
+
+.chapter-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+body.mode-chapter .chapter-container {
+    gap: 24px;
+}
+
+/* ============ 对白模式消息 ============ */
+.message-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    position: relative;
+    transition: all 0.2s;
+}
+.message-row.left {
+    justify-content: flex-start;
+}
+.message-row.right {
+    justify-content: flex-end;
+}
+.message-row.narration {
+    justify-content: center;
+    margin: 12px 0;
+}
+.narration-text {
+    font-size: 13px;
+    color: rgba(40, 40, 40, 0.7);
+    font-style: italic;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.6;
+    max-width: 85%;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+    transition: transform 0.2s;
+}
+
+/* 图片/头像物理防御：彻底消除 iOS 连续点击放大的隐藏 Bug */
+.msg-avatar-wrapper {
+    width: 42px;
+    height: 42px;
+    padding: 2px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    z-index: 2;
+    pointer-events: none !important;
+    touch-action: none !important;
+    -webkit-user-drag: none !important;
+}
+.msg-avatar-wrapper img {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    object-fit: cover;
+    transform: translateZ(0);
+    pointer-events: none !important;
+    touch-action: none !important;
+    -webkit-user-drag: none !important;
+}
+
+.bubble {
+    padding: 12px 16px;
+    border-radius: 20px;
+    max-width: 76%;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1a1a1a;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease, background 0.2s ease;
+    transform-origin: center;
+    transform: translateZ(0);
+    will-change: transform, box-shadow;
+    position: relative;
+}
+.message-row.left .bubble {
+    border-top-left-radius: 6px;
+}
+.message-row.right .bubble {
+    border-top-right-radius: 6px;
+}
+
+.bubble.pressing,
+.narration-text.pressing {
+    transform: scale(1.04) translateZ(0);
+    z-index: 10;
+    animation: physicalShake 0.3s ease-in-out;
+}
+.bubble.pressing {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes physicalShake {
+    0% { transform: scale(1.04) translateZ(0) translateY(0); }
+    25% { transform: scale(1.04) translateZ(0) translateY(-2px) rotate(0.5deg); }
+    50% { transform: scale(1.04) translateZ(0) translateY(1px) rotate(-0.5deg); }
+    75% { transform: scale(1.04) translateZ(0) translateY(-1px); }
+    100% { transform: scale(1.04) translateZ(0) translateY(0); }
+}
+
+/* ============ 篇章模式消息 ============ */
+.chapter-item {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
+    position: relative;
+    transition: all 0.2s;
+    animation: fadeIn 0.4s ease;
+}
+.chapter-item.right {
+    align-items: flex-end;
+}
+.chapter-item.narration {
+    justify-content: center;
+    align-items: center;
+    padding: 12px 0;
+}
+
+.chapter-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+    width: 100%;
+}
+.profile-right {
+    flex-direction: row-reverse;
+}
+
+.chapter-avatar-glass {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    backdrop-filter: blur(10px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 2px;
+    flex-shrink: 0;
+    pointer-events: none !important;
+    touch-action: none !important;
+}
+.chapter-avatar-glass img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    pointer-events: none !important;
+    touch-action: none !important;
+    -webkit-user-drag: none !important;
+}
+
+.profile-info-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.profile-right .profile-info-group {
+    align-items: flex-end;
+}
+
+.profile-top-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.profile-right .profile-top-row {
+    flex-direction: row-reverse;
+}
+
+.profile-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+    text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+}
+
+.profile-signature {
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+    text-align: left;
+}
+.profile-right .profile-signature {
+    text-align: right;
+}
+
+.chapter-bubble {
+    padding: 20px 24px;
+    border-radius: 0 20px 20px 20px;
+    margin-left: 4px;
+    margin-bottom: 8px;
+    max-width: 92%;
+}
+.chapter-bubble.right {
+    border-radius: 20px 0 20px 20px;
+    margin-left: 0;
+    margin-right: 4px;
+}
+.chapter-bubble.pressing {
+    transform: scale(1.02) translateZ(0);
+    z-index: 10;
+    animation: physicalShake 0.3s ease-in-out;
+}
+
+.chapter-paragraph {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222222;
+    text-align: justify;
+    text-shadow: 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.action-text {
+    color: #444444;
+    font-weight: 400;
+}
+.dialogue-text {
+    color: #000000;
+    font-weight: 600;
+}
+
+/* ================= 底部输入框（安全区避让 + 16px 防放大） ================= */
+.bottom-input-container {
+    width: 100%;
+    padding: 10px 0 calc(1rem + env(safe-area-inset-bottom, 12px));
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 100;
+}
+
+.glass-input-wrapper {
+    width: 86%;
+    max-width: 440px;
+    height: 46px;
+    border-radius: 23px;
+    display: flex;
+    align-items: center;
+    padding: 0 5px;
+    position: relative;
+    background: rgba(255, 255, 255, 0.35);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.btn-ai {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    touch-action: none;
+}
+.btn-ai svg {
+    width: 18px;
+    height: 18px;
+    fill: rgba(255, 255, 255, 0.9);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* 核心防线：>= 16px，防止 iOS 聚焦输入框时强制放大整个页面 */
+.glass-input {
+    flex: 1;
+    height: 100%;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 16px;
+    color: #333333;
+    caret-color: #333333;
+    padding: 0 8px;
+    font-family: inherit;
+}
+.glass-input::placeholder {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+.btn-send {
+    height: 36px;
+    min-width: 36px;
+    border-radius: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.4);
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    padding: 0 10px;
+    flex-shrink: 0;
+    touch-action: none;
+}
+.btn-send .icon-arrow {
+    width: 16px;
+    height: 16px;
+    stroke: #666666;
+    stroke-width: 2.5;
+    fill: none;
+}
+.btn-send .text-send {
+    display: none;
+    color: #333333;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.glass-input-wrapper.active {
+    background: rgba(255, 255, 255, 0.5);
+}
+.glass-input-wrapper.active .btn-send {
+    background: rgba(0, 0, 0, 0.08);
+    padding: 0 14px;
+}
+.glass-input-wrapper.active .btn-send .icon-arrow {
+    display: none;
+}
+.glass-input-wrapper.active .btn-send .text-send {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 桌面端大屏居中约束 */
+@media (hover: hover) and (min-width: 600px) {
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #e5e7eb !important;
+    }
+    .bg-layer,
+    .main-container {
+        width: 100%;
+        max-width: 480px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    .main-container {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+    }
+}

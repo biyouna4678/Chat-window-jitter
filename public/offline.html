@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="manifest" href="./manifest.json">
+
+    <title>线下剧场 - 液态玻璃通讯</title>
+
+    <link rel="stylesheet" href="./css/offline-base.css?v=1">
+    <link rel="stylesheet" href="./css/offline-components.css?v=1">
+    <style id="user-custom-css"></style>
+    <style id="user-statusbar-css"></style>
+
+    <!-- 共享存储与线下模块化脚本 -->
+    <script src="./js/storage.js?v=1"></script>
+    <script src="./js/offline-data.js?v=1"></script>
+    <script src="./js/offline-chat.js?v=1"></script>
+    <script src="./js/offline-settings.js?v=1"></script>
+    <script src="./js/offline-app.js?v=1"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body
+    x-data="offlineApp()"
+    x-init="init()"
+    :class="{ 'mode-chapter': currentMode === 'chapter', 'multi-select-mode': isMultiSelectMode }"
+>
+    <div class="bg-layer" aria-hidden="true"></div>
+
+    <div class="main-container">
+        <header class="top-header">
+            <div class="nav-bar">
+                <div class="nav-btn icon-only" id="btn-header-close" x-show="!isMultiSelectMode" @click="goBackToOnline()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </div>
+                <div class="nav-btn" x-show="isMultiSelectMode" @click="cancelMultiSelect()" x-cloak>取消</div>
+
+                <div class="nav-btn icon-only" id="open-settings" x-show="!isMultiSelectMode" @click="showSettingsPanel = true">
+                    <svg viewBox="0 0 24 24" fill="#1a1a1a">
+                        <circle cx="5" cy="12" r="2"></circle>
+                        <circle cx="12" cy="12" r="2"></circle>
+                        <circle cx="19" cy="12" r="2"></circle>
+                    </svg>
+                </div>
+                <div class="nav-btn" x-show="isMultiSelectMode" @click="toggleSelectAll()" x-text="selectAllLabel" x-cloak>全选</div>
+            </div>
+            <div class="avatars-container">
+                <div class="avatar-wrapper"><img src="./assets/images/me.jpg" alt="攸攸"></div>
+                <div class="avatar-wrapper"><img src="./assets/images/yosali.jpg" alt="Yosali"></div>
+                <div class="center-heart">
+                    <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </div>
+            </div>
+            <div class="header-divider"></div>
+            <div class="status-text" x-text="statusText"></div>
+        </header>
+
+        <!-- 小剧场自定义 HTML 渲染槽 -->
+        <div class="custom-theater-slot" x-show="theaterHtml.trim().length > 0" x-html="theaterHtml" x-cloak></div>
+
+        <main class="chat-area" id="chat-area">
+            <div class="chapter-container" id="messages-container">
+                <!-- 对白模式 -->
+                <template x-for="msg in dialogueMessages" :key="'d-' + msg.id">
+                    <div class="message-row feedback-target"
+                         x-show="currentMode === 'dialogue'"
+                         :class="rowClasses(msg)"
+                         :data-role="msg.role"
+                         :data-id="msg.id"
+                         @click="handleRowClick($event, msg)">
+
+                        <!-- AI 头像 -->
+                        <div class="wet-glass msg-avatar-wrapper" x-show="msg.role === 'ai'"><img :src="msg.avatar" alt="avatar"></div>
+
+                        <!-- 气泡内容 -->
+                        <div class="wet-glass bubble"
+                             x-show="msg.role === 'ai' || msg.role === 'user'"
+                             :class="{ pressing: pressingMsgId === msg.id }"
+                             x-text="msg.content"
+                             @touchstart="startPress($event, msg, $el)"
+                             @touchend="endPress"
+                             @touchmove="cancelPress"
+                             @contextmenu.prevent="showMenuFromEvent($event, msg, $el)"></div>
+
+                        <!-- User 头像 -->
+                        <div class="wet-glass msg-avatar-wrapper" x-show="msg.role === 'user'"><img :src="msg.avatar" alt="avatar"></div>
+
+                        <!-- 叙述文本 -->
+                        <div class="narration-text"
+                             x-show="msg.role === 'narration'"
+                             :class="{ pressing: pressingMsgId === msg.id }"
+                             x-text="msg.content"
+                             @touchstart="startPress($event, msg, $el)"
+                             @touchend="endPress"
+                             @touchmove="cancelPress"
+                             @contextmenu.prevent="showMenuFromEvent($event, msg, $el)"></div>
+                    </div>
+                </template>
+
+                <!-- 篇章模式 -->
+                <template x-for="msg in chapterMessages" :key="'c-' + msg.id">
+                    <div class="chapter-item feedback-target"
+                         x-show="currentMode === 'chapter'"
+                         :class="chapterClasses(msg)"
+                         :data-role="msg.role"
+                         :data-id="msg.id"
+                         @click="handleRowClick($event, msg)">
+
+                        <!-- 叙述文本 -->
+                        <div class="narration-text"
+                             x-show="msg.role === 'narration'"
+                             :class="{ pressing: pressingMsgId === msg.id }"
+                             x-text="msg.content"
+                             @touchstart="startPress($event, msg, $el)"
+                             @touchend="endPress"
+                             @touchmove="cancelPress"
+                             @contextmenu.prevent="showMenuFromEvent($event, msg, $el)"></div>
+
+                        <div class="chapter-user-profile" :class="{ 'profile-right': msg.role === 'user' }" x-show="msg.role !== 'narration'">
+                            <div class="chapter-avatar-glass"><img :src="msg.avatar" :alt="msg.name"></div>
+                            <div class="profile-info-group">
+                                <div class="profile-top-row"><span class="profile-name" x-text="msg.name"></span></div>
+                                <div class="profile-signature" x-text="msg.signature"></div>
+                            </div>
+                        </div>
+
+                        <div class="wet-glass-light chapter-bubble" :class="{ 'right': msg.role === 'user' }" x-show="msg.role !== 'narration'">
+                            <p class="chapter-paragraph"
+                               :class="{ pressing: pressingMsgId === msg.id }"
+                               x-html="msg.content"
+                               @touchstart="startPress($event, msg, $el)"
+                               @touchend="endPress"
+                               @touchmove="cancelPress"
+                               @contextmenu.prevent="showMenuFromEvent($event, msg, $el)"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </main>
+
+        <div class="bottom-input-container">
+            <div class="glass-input-wrapper" :class="{ active: chatInput.trim().length > 0 }">
+                <div class="btn-ai" @pointerdown.prevent="showToast('已就绪：当前人设与世界书约束生效中')">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+                        <path d="M20 3v4"></path>
+                        <path d="M22 5h-4"></path>
+                        <path d="M4 17v2"></path>
+                        <path d="M5 18H3"></path>
+                    </svg>
+                </div>
+                <input type="text" class="glass-input" id="chatInput" x-model="chatInput" placeholder="输入消息..." @keydown.enter.prevent="sendMessage()">
+                <div class="btn-send" id="btnSend" @pointerdown.prevent="sendMessage()">
+                    <svg class="icon-arrow" viewBox="0 0 24 24">
+                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                        <polyline points="5 12 12 5 19 12"></polyline>
+                    </svg>
+                    <span class="text-send">Send</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 设置页 ================= -->
+    <div class="settings-page" :class="{ show: showSettingsPanel }" x-cloak>
+        <header class="settings-header">
+            <div class="back-btn" @click="showSettingsPanel = false">❮</div>
+            <span style="font-size: 15px; font-weight: 600;">线下设置</span>
+            <div style="width: 24px;"></div>
+        </header>
+
+        <div class="settings-profile">
+            <div class="avatars-container">
+                <div class="avatar-wrapper"><img src="./assets/images/me.jpg" alt="攸攸"></div>
+                <div class="avatar-wrapper"><img src="./assets/images/yosali.jpg" alt="Yosali"></div>
+            </div>
+            <div class="names-text">Yosali & 攸攸</div>
+        </div>
+
+        <div class="tab-bar">
+            <div class="tab-item" :class="{ active: activeTab === 'settings' }" @click="activeTab = 'settings'">设定</div>
+            <div class="tab-item" :class="{ active: activeTab === 'beauty' }" @click="activeTab = 'beauty'">美化</div>
+        </div>
+
+        <div class="settings-content">
+            <!-- 面板 1：设定 -->
+            <div class="panel" :class="{ active: activeTab === 'settings' }">
+                <div class="settings-group">
+                    <div class="settings-item" @click="openPresetModal()">
+                        <div class="click-row">
+                            <span>预设配置</span>
+                            <div style="display: flex; align-items: center; font-size: 14px; color: #888;">
+                                <span style="color: #1a1a1a; font-weight: 500;" x-text="currentPreset"></span>
+                                <span class="arrow">❯</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-item" @click="showSystemPromptModal = true">
+                        <div class="click-row">
+                            <span>预设专属提示词</span>
+                            <div style="display: flex; align-items: center; font-size: 14px; color: #888;">
+                                <span style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="systemPromptTitle || '未设定'"></span>
+                                <span class="arrow">❯</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span>当前模式</span>
+                        <div class="mode-switch">
+                            <div class="mode-btn" :class="{ active: currentMode === 'dialogue' }" @click="setMode('dialogue')">对白</div>
+                            <div class="mode-btn" :class="{ active: currentMode === 'chapter' }" @click="setMode('chapter')">篇章</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-item">
+                        <span>人称视角</span>
+                        <div class="mode-switch">
+                            <div class="mode-btn" :class="{ active: perspective === 'first' }" @click="perspective = 'first'; persistSettings()">第一人称</div>
+                            <div class="mode-btn" :class="{ active: perspective === 'second' }" @click="perspective = 'second'; persistSettings()">第二人称</div>
+                            <div class="mode-btn" :class="{ active: perspective === 'third' }" @click="perspective = 'third'; persistSettings()">第三人称</div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span>字数区间</span>
+                        <div class="range-container">
+                            <input type="text" inputmode="numeric" class="range-input" x-model="minWords" @focus="$el.select()">
+                            <span class="range-separator">-</span>
+                            <input type="text" inputmode="numeric" class="range-input" x-model="maxWords" @focus="$el.select()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-item" @click="showWorldBookModal = true">
+                        <span>多层世界书</span>
+                        <div style="display: flex; align-items: center; font-size: 14px; color: #888;">管理设定 <span class="arrow">❯</span></div>
+                    </div>
+                    <div class="settings-item" @click="showNpcModal = true">
+                        <span>多角色 / NPC 管理</span>
+                        <div style="display: flex; align-items: center; font-size: 14px; color: #888;">群像与挂载 <span class="arrow">❯</span></div>
+                    </div>
+                    <div class="settings-item" @click="showBranchModal = true">
+                        <span>分支线管理</span>
+                        <span class="arrow">❯</span>
+                    </div>
+                </div>
+
+                <div class="settings-group" style="padding-bottom: 10px;">
+                    <div class="settings-item" style="border-bottom: none; padding-bottom: 0;">
+                        <span style="font-size: 16px; font-weight: 600;">记忆连贯系统</span>
+                        <span style="font-size: 12px; color: #1a1a1a; font-weight: 600; cursor: pointer;" @click="showMemoryModal = true">记忆库管理 ❯</span>
+                    </div>
+                    <div class="memory-desc" style="padding: 8px 20px 16px 20px;">
+                        开启后，AI 将通过向量语义检索智能关联过往细节，缓解上下文限制，大幅降低角色遗忘与出戏的概率。
+                    </div>
+                    <div class="settings-item" style="padding: 12px 20px; border-bottom: 1px solid #f2f2f7;">
+                        <div>
+                            <span style="display: block; font-size: 14px;">线上线下记忆同步</span>
+                            <span style="font-size: 11px; color: #999;">线下结束后自动压缩总结，切换后无缝接续</span>
+                        </div>
+                        <div class="toggle-switch" :class="{ active: memorySync }" @click="memorySync = !memorySync; persistSettings()"></div>
+                    </div>
+                    <div class="settings-item" style="padding: 12px 20px; border-bottom: 1px solid #f2f2f7;">
+                        <div>
+                            <span style="display: block; font-size: 14px;">语义向量召回</span>
+                            <span style="font-size: 11px; color: #999;">理解语义含义，而非单纯的关键词匹配</span>
+                        </div>
+                        <div class="toggle-switch" :class="{ active: semanticRecall }" @click="semanticRecall = !semanticRecall; persistSettings()"></div>
+                    </div>
+                    <div class="settings-item" style="padding: 12px 20px; border-bottom: none;">
+                        <div>
+                            <span style="display: block; font-size: 14px;">遗忘曲线与强化</span>
+                            <span style="font-size: 11px; color: #999;">模拟用进废退，反复提及自动晋升为长期</span>
+                        </div>
+                        <div class="toggle-switch" :class="{ active: forgettingCurve }" @click="forgettingCurve = !forgettingCurve; persistSettings()"></div>
+                    </div>
+                </div>
+
+                <div class="settings-group" style="padding-bottom: 10px;">
+                    <div class="settings-item" style="border-bottom: none; padding-bottom: 0;">
+                        <span style="font-size: 16px; font-weight: 600;">人格稳定与防 OOC</span>
+                    </div>
+                    <div class="memory-desc" style="padding: 8px 20px 16px 20px;">
+                        从底层逻辑约束 AI 生成，防止角色为了"推进剧情"而做出违背性格底色的行为。
+                    </div>
+                    <div class="settings-item" style="padding: 12px 20px; border-bottom: 1px solid #f2f2f7;">
+                        <div>
+                            <span style="display: block; font-size: 14px;">人格滤镜自检</span>
+                            <span style="font-size: 11px; color: #999;">生成前触发自我审查：是性格的自然流露，还是为了推进剧情的妥协？</span>
+                        </div>
+                        <div class="toggle-switch" :class="{ active: personaFilter }" @click="personaFilter = !personaFilter; persistSettings()"></div>
+                    </div>
+                    <div class="settings-item" style="padding: 12px 20px; border-bottom: 1px solid #f2f2f7;">
+                        <div>
+                            <span style="display: block; font-size: 14px;">语义相似度校验</span>
+                            <span style="font-size: 11px; color: #999;">回复低于设定阈值将自动丢弃并重新生成</span>
+                        </div>
+                        <div class="toggle-switch" :class="{ active: similarityCheck }" @click="similarityCheck = !similarityCheck; persistSettings()"></div>
+                    </div>
+                    <div class="settings-item" style="padding: 12px 20px; border-bottom: 1px solid #f2f2f7; cursor: pointer;" @click="openEvolutionModal()">
+                        <span style="font-size: 14px;">动态演进与 专属语感克隆</span>
+                        <span class="arrow">❯</span>
+                    </div>
+                    <div class="settings-item" style="padding: 12px 20px; border-bottom: none; cursor: pointer;" @click="showRulesModal = true">
+                        <span style="font-size: 14px;">学习与纠偏规则</span>
+                        <span class="arrow">❯</span>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-item vertical">
+                        <span>文风预设</span>
+                        <div class="tag-group">
+                            <template x-for="style in builtinStyles" :key="style">
+                                <div class="tag" :class="{ active: currentStyle === style }" @click="currentStyle = style; persistSettings()" x-text="style"></div>
+                            </template>
+                            <template x-for="style in customStyles" :key="style">
+                                <div class="tag" :class="{ active: currentStyle === style }" @click="currentStyle = style; persistSettings()" x-text="style"></div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="settings-item" @click="showCustomStyleModal = true">
+                        <div class="click-row">
+                            <span>自定义文风</span>
+                            <div style="display: flex; align-items: center; font-size: 14px; color: #888;">
+                                <span style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="currentStyle || '未设定'"></span>
+                                <span class="arrow">❯</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span>修辞密度</span>
+                        <div class="mode-switch">
+                            <div class="mode-btn" :class="{ active: rhetoricDensity === 'simple' }" @click="rhetoricDensity = 'simple'; persistSettings()">简洁</div>
+                            <div class="mode-btn" :class="{ active: rhetoricDensity === 'moderate' }" @click="rhetoricDensity = 'moderate'; persistSettings()">适中</div>
+                            <div class="mode-btn" :class="{ active: rhetoricDensity === 'ornate' }" @click="rhetoricDensity = 'ornate'; persistSettings()">华丽</div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span>叙事节奏</span>
+                        <div class="mode-switch">
+                            <div class="mode-btn" :class="{ active: narrativePace === 'fast' }" @click="narrativePace = 'fast'; persistSettings()">快</div>
+                            <div class="mode-btn" :class="{ active: narrativePace === 'moderate' }" @click="narrativePace = 'moderate'; persistSettings()">适中</div>
+                            <div class="mode-btn" :class="{ active: narrativePace === 'slow' }" @click="narrativePace = 'slow'; persistSettings()">慢</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="badwords-card">
+                    <div class="badwords-title">全局禁词</div>
+                    <div class="badwords-subtitle">顿号分隔</div>
+                    <div class="badwords-input-wrapper">
+                        <input type="text" class="badwords-input" placeholder="输入禁词，按顿号分隔..." x-model="globalBadwordInput">
+                        <button class="badwords-add-btn" @click="addBadword('global')">添加</button>
+                    </div>
+                    <div class="badwords-tags">
+                        <template x-for="(word, i) in globalBadwords" :key="'g-' + i">
+                            <div class="badword-tag">
+                                <span x-text="word"></span>
+                                <span class="badword-tag-close" @click="globalBadwords.splice(i, 1); persistSettings()">×</span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="badwords-card">
+                    <div class="badwords-title">局部禁词</div>
+                    <div class="badwords-subtitle">仅对当前角色生效 / 顿号分隔</div>
+                    <div class="badwords-input-wrapper">
+                        <input type="text" class="badwords-input" placeholder="输入禁词，按顿号分隔..." x-model="localBadwordInput">
+                        <button class="badwords-add-btn" @click="addBadword('local')">添加</button>
+                    </div>
+                    <div class="badwords-tags">
+                        <template x-for="(word, i) in localBadwords" :key="'l-' + i">
+                            <div class="badword-tag">
+                                <span x-text="word"></span>
+                                <span class="badword-tag-close" @click="localBadwords.splice(i, 1); persistSettings()">×</span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 面板 2：美化 -->
+            <div class="panel" :class="{ active: activeTab === 'beauty' }">
+                <div class="settings-group">
+                    <div class="settings-item" @click="$refs.wallpaperInput.click()">
+                        <span>更换壁纸</span>
+                        <span class="arrow">❯</span>
+                        <input type="file" x-ref="wallpaperInput" class="file-input" accept="image/*" @change="changeWallpaper($event)">
+                    </div>
+                    <div class="settings-item" @click="$refs.fontInput.click()">
+                        <span>字体选择</span>
+                        <div style="display: flex; align-items: center; font-size: 14px; color: #888;">点击上传 (ttf/otf) <span class="arrow">❯</span></div>
+                        <input type="file" x-ref="fontInput" class="file-input" accept=".ttf,.otf" @change="handleFontUpload($event)">
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-item vertical">
+                        <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>首页文案编辑</span>
+                            <span style="font-size: 12px; color: #999;">头像下方的文字</span>
+                        </div>
+                        <textarea class="css-textarea" style="height: 70px; font-family: inherit; font-size: 16px; line-height: 1.5;" placeholder="输入首页头像下方的文案..." x-model="statusText"></textarea>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-item vertical">
+                        <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>自定义 CSS</span>
+                            <span style="font-size: 12px; color: #1a1a1a; font-weight: 600; cursor: pointer;" @click="applyCustomCSS()">应用 CSS</span>
+                        </div>
+                        <textarea class="css-textarea" placeholder=".bubble { background: rgba(255,0,0,0.2) !important; }" x-model="customCss" @input="applyCustomCSS()"></textarea>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-item vertical">
+                        <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>状态栏美化 (仅支持 CSS)</span>
+                            <span style="font-size: 12px; color: #1a1a1a; font-weight: 600; cursor: pointer;" @click="applyStatusBarCSS()">应用状态栏</span>
+                        </div>
+                        <textarea class="css-textarea" placeholder="输入自定义状态栏 CSS..." x-model="statusBarCss" @input="applyStatusBarCSS()"></textarea>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-item vertical">
+                        <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>小剧场 HTML 插入</span>
+                        </div>
+                        <textarea class="css-textarea" placeholder="<div class='custom-theater'>...</div>" x-model="theaterHtml"></textarea>
+                    </div>
+                </div>
+
+                <div class="settings-group" style="background: transparent; box-shadow: none; padding: 0;">
+                    <div class="theme-btn-group">
+                        <div class="theme-btn primary" @click="exportTheme()">导出主题</div>
+                        <div class="theme-btn" @click="$refs.themeImportInput.click()">导入主题</div>
+                        <input type="file" x-ref="themeImportInput" class="file-input" accept=".json" @change="importTheme($event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 聊天相关组件 ================= -->
+    <div class="feedback-popup"
+         id="feedbackPopup"
+         x-cloak
+         :class="{ show: isMenuOpen, 'is-bottom': menuPosition.isBottom }"
+         :style="`top: ${menuPosition.top}px; left: ${menuPosition.left}px; --tail-left: ${menuPosition.tailLeft}px;`">
+        <div class="menu-pages-container">
+            <div class="menu-page" :class="{ active: menuPage === 1 }">
+                <template x-for="opt in currentMenuOptions.page1" :key="'p1-' + opt.action">
+                    <button class="menu-btn" @click="handleAction(opt.action)" x-text="opt.text"></button>
+                </template>
+                <template x-if="currentMenuOptions.page2.length > 0">
+                    <button class="menu-btn icon-btn" @click="menuPage = 2">
+                        <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                </template>
+            </div>
+            <div class="menu-page" :class="{ active: menuPage === 2 }">
+                <button class="menu-btn icon-btn" @click="menuPage = 1">
+                    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <template x-for="opt in currentMenuOptions.page2" :key="'p2-' + opt.action">
+                    <button class="menu-btn" @click="handleAction(opt.action)" x-text="opt.text"></button>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <div class="multi-action-bar" x-cloak>
+        <button class="multi-btn" @click="cancelMultiSelect()">取消</button>
+        <div style="font-size: 14px; color: #666;" x-text="`已选择 ${selectedIds.length} 项`"></div>
+        <button class="multi-btn delete" @click="deleteSelectedMessages()">删除</button>
+    </div>
+
+    <div class="edit-modal-overlay" :class="{ show: isEditModalOpen }" x-cloak>
+        <div class="edit-modal-content">
+            <div class="edit-modal-title">编辑消息</div>
+            <textarea class="edit-textarea" x-model="editText"></textarea>
+            <div class="edit-btn-group">
+                <button class="edit-btn edit-btn-cancel" @click="closeEditModal()">取消</button>
+                <button class="edit-btn edit-btn-save" @click="saveEditMessage()">保存</button>
+            </div>
+        </div>
+    </div>
+    <div class="elegant-toast" :class="{ show: toastMessage }" x-text="toastMessage" x-cloak></div>
+
+    <!-- ================= 弹窗集合（共 10 个） ================= -->
+
+    <!-- 1. 世界书 -->
+    <div class="modal-overlay" :class="{ show: showWorldBookModal }" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-close-btn" @click="showWorldBookModal = false">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </div>
+            <div class="modal-title">多层世界书管理</div>
+            <div class="settings-content" style="padding: 0; max-height: 60vh;">
+                <template x-for="(layer, lIdx) in worldBookLayers" :key="layer.id">
+                    <div class="wb-layer-card" :style="lIdx === worldBookLayers.length - 1 ? 'margin-bottom: 0;' : ''">
+                        <div class="wb-layer-header">
+                            <div>
+                                <div class="wb-layer-title" x-text="layer.title"></div>
+                                <div class="wb-layer-desc" x-text="layer.desc"></div>
+                            </div>
+                            <div class="toggle-switch" :class="{ active: layer.enabled }" @click="layer.enabled = !layer.enabled; persistSettings()"></div>
+                        </div>
+                        <template x-for="item in layer.items" :key="item.id">
+                            <div class="wb-item">
+                                <div>
+                                    <div class="wb-item-title" x-text="item.title"></div>
+                                    <div class="wb-item-content" x-text="item.content"></div>
+                                </div>
+                                <button class="wb-state-btn"
+                                        :class="wbStateClass(item.state)"
+                                        @click="cycleWbItemState(item)"
+                                        x-text="wbStateLabel(item.state)"></button>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+            <div class="modal-btn-group"><button class="modal-btn btn-cancel" @click="showWorldBookModal = false">关闭</button></div>
+        </div>
+    </div>
+
+    <!-- 2. NPC -->
+    <div class="modal-overlay" :class="{ show: showNpcModal }" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-close-btn" @click="showNpcModal = false">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </div>
+            <div class="modal-title">多角色 / NPC 管理</div>
+            <div class="settings-item" style="padding: 0 0 16px 0; border-bottom: 1px solid #e5e5ea;">
+                <span style="font-size: 15px; font-weight: 600;">当前叙事模式</span>
+                <div class="mode-switch">
+                    <div class="mode-btn" :class="{ active: npcMode === 'group' }" @click="npcMode = 'group'; persistSettings()">群像模式</div>
+                    <div class="mode-btn" :class="{ active: npcMode === 'single' }" @click="npcMode = 'single'; persistSettings()">单人模式</div>
+                </div>
+            </div>
+            <div class="settings-content" style="padding: 0; max-height: 50vh; overflow-y: auto;">
+                <template x-for="npc in npcs" :key="npc.id">
+                    <div class="npc-item" :style="npc.locked ? 'background: #f9f9fb; border: 1px solid #e5e5ea;' : ''">
+                        <div class="npc-info">
+                            <template x-if="npc.avatar">
+                                <img :src="npc.avatar" class="npc-avatar" :alt="npc.name">
+                            </template>
+                            <template x-if="!npc.avatar">
+                                <div class="npc-avatar" style="display:flex; justify-content:center; align-items:center; color:#999;">?</div>
+                            </template>
+                            <div>
+                                <div class="npc-name" x-text="npc.name"></div>
+                                <div class="npc-tag" x-text="npc.tag"></div>
+                            </div>
+                        </div>
+                        <div class="toggle-switch"
+                             :class="{ active: npc.enabled }"
+                             :style="npc.locked ? 'opacity: 0.5; pointer-events: none;' : ''"
+                             @click="if (!npc.locked) { npc.enabled = !npc.enabled; persistSettings(); }"></div>
+                    </div>
+                </template>
+            </div>
+            <div class="modal-btn-group"><button class="modal-btn btn-cancel" @click="showNpcModal = false">关闭</button></div>
+        </div>
+    </div>
+
+    <!-- 3. 预设配置 -->
+    <div class="modal-overlay" :class="{ show: showPresetModal }" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-title">预设管理</div>
+            <div class="preset-list">
+                <template x-for="preset in presets" :key="preset">
+                    <div class="preset-list-item" :class="{ active: currentPreset === preset }" @click="selectPreset(preset)">
+                        <span x-text="preset"></span>
+                    </div>
+                </template>
+            </div>
+
+            <button class="add-preset-btn" @click="showSavePresetInput = true">+ 保存当前配置为预设</button>
+            <div class="modal-input-group" x-show="showSavePresetInput" x-cloak style="margin-top: 16px;">
+                <input type="text" class="modal-input" x-model="newPresetName" placeholder="给这个预设起个名字...">
+            </div>
+            <div class="modal-btn-group">
+                <button class="modal-btn btn-cancel" @click="showPresetModal = false">关闭</button>
+                <button class="modal-btn btn-save" x-show="showSavePresetInput" x-cloak @click="saveNewPreset()">确认保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 预设专属提示词 -->
+    <div class="modal-overlay" :class="{ show: showSystemPromptModal }" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-title">预设专属提示词</div>
+            <div class="modal-input-group">
+                <input type="text" class="modal-input" x-model="systemPromptTitle" placeholder="比如：冷酷杀手、赛博世界底层规则...">
+            </div>
+            <div class="modal-input-group">
+                <div class="modal-label">详细内容 (System Prompt)</div>
+                <textarea class="modal-textarea" x-model="systemPromptContent" placeholder="输入该预设下生效的底层指令..."></textarea>
+            </div>
+            <div class="modal-btn-group">
+                <button class="modal-btn btn-cancel" @click="showSystemPromptModal = false">取消</button>
+                <button class="modal-btn btn-save" @click="saveSystemPrompt()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 新增自定义文风 -->
+    <div class="modal-overlay" :class="{ show: showCustomStyleModal }" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-title">新增自定义文风</div>
+            <div class="modal-input-group">
+                <input type="text" class="modal-input" x-model="newStyleName" placeholder="比如：意识流、冷硬派...">
+            </div>
+            <div class="modal-input-group">
+                <div class="modal-label">详细描述</div>
+                <textarea class="modal-textarea" x-model="newStyleDesc" placeholder="描述这种文风的感官侧重点、常用词句长短..."></textarea>
+            </div>
+            <div class="modal-btn-group">
+                <button class="modal-btn btn-cancel" @click="showCustomStyleModal = false">取消</button>
+                <button class="modal-btn btn-save" @click="saveCustomStyle()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. 记忆图谱 -->
+    <div class="modal-overlay" :class="{ show: showMemoryModal }" style="z-index: 2000;" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-close-btn" @click="showMemoryModal = false">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </div>
+            <div class="modal-title">记忆图谱与分级</div>
+            <div class="knowledge-graph-tip">
+                <b>🕸️ 知识图谱关联已激活</b>
+                当前已建立 142 个节点关联。<br>
+                例如：<code>阿宁 → 生日 → 周六</code>；<code>阿宁 → 口味 → 不爱甜</code>。
+            </div>
+            <div class="memory-layer" @click="openMemoryDetail('core', '核心记忆')">
+                <div class="layer-info"><span class="layer-name">核心记忆</span><span class="layer-desc">角色的绝对真理 (硬编码注入)</span></div>
+                <span class="layer-count" x-text="(memoryDB.core?.length || 0) + ' 项'"></span>
+            </div>
+            <div class="memory-layer" @click="openMemoryDetail('long', '长期记忆')">
+                <div class="layer-info"><span class="layer-name">长期记忆</span><span class="layer-desc">生日、禁忌、身份等永不遗忘</span></div>
+                <span class="layer-count" x-text="(memoryDB.long?.length || 0) + ' 项'"></span>
+            </div>
+            <div class="memory-layer" @click="openMemoryDetail('mid', '中期记忆')">
+                <div class="layer-info"><span class="layer-name">中期记忆</span><span class="layer-desc">带标签的计划、偏好 (按重要度召回)</span></div>
+                <span class="layer-count" x-text="(memoryDB.mid?.length || 0) + ' 项'"></span>
+            </div>
+            <div class="memory-layer" @click="openMemoryDetail('short', '短期记忆')">
+                <div class="layer-info"><span class="layer-name">短期记忆</span><span class="layer-desc">当前会话上下文 (超载将自动压缩)</span></div>
+                <span class="layer-count" x-text="shortMemoryCountText"></span>
+            </div>
+            <div class="modal-btn-group"><button class="modal-btn btn-cancel" @click="showMemoryModal = false">关闭</button></div>
+        </div>
+    </div>
+
+    <!-- 7. 记忆详情 -->
+    <div class="modal-overlay" :class="{ show: showMemoryDetailModal }" style="z-index: 2100;" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-title" x-text="memoryDetailTitle + ' 存档'"></div>
+            <div class="memory-detail-list">
+                <template x-if="memoryDetailList.length === 0">
+                    <div style="text-align:center; color:#999; padding:20px;">暂无记忆</div>
+                </template>
+                <template x-for="(mem, i) in memoryDetailList" :key="'mem-' + i">
+                    <div class="memory-item">
+                        <div class="memory-content" x-text="mem.content"></div>
+                        <div class="memory-meta">
+                            <div class="memory-tags">
+                                <template x-for="(tag, j) in (mem.tags || [])" :key="'tag-' + j">
+                                    <span class="m-tag" x-text="tag"></span>
+                                </template>
+                            </div>
+                            <div class="memory-stats">
+                                <template x-if="mem.strength">
+                                    <span>
+                                        强度: <span x-text="mem.strength"></span>
+                                        <span class="strength-bar"><span class="strength-fill" :style="`width: ${parseInt(mem.strength)}%;`"></span></span>
+                                    </span>
+                                </template>
+                                <span x-text="mem.date || ''"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="modal-btn-group" style="margin-top: 0;">
+                <button class="modal-btn btn-cancel" @click="showMemoryDetailModal = false">返回上一级</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. 演进 -->
+    <div class="modal-overlay" :class="{ show: showEvolutionModal }" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-title">
+                动态演进与 专属语感克隆
+                <div class="info-icon-btn" @click="showLoraInfo = !showLoraInfo">!</div>
+            </div>
+            <div class="lora-info-card" :class="{ show: showLoraInfo }">
+                <div class="info-desc">
+                    <b>Q: 什么是专属语料库 / 语感克隆？</b><br>
+                    不需要经过复杂的模型训练。通过上传角色的聊天记录或设定的语料，系统会在本地提取其最典型的说话方式、用词习惯和情绪断句，在每次对话时作为"范文"喂给 AI，让 AI 瞬间模仿出原汁原味的口吻。
+                </div>
+                <div class="info-desc">
+                    <b>Q: 什么是偏好规则沉淀？</b><br>
+                    不需要改变底层大模型的权重。在日常聊天中，你通过点赞、点踩或直接修改 AI 的回答，系统会自动提炼出"雷区"和"偏好规则"，并在后续对话中作为最高优先级指令生效，让 AI 越来越懂你。
+                </div>
+            </div>
+            <div style="font-size: 12px; color: #888; margin-bottom: 16px; line-height: 1.5;">
+                允许角色成长，但必须由剧情重大事件或长期情感积累驱动。变化必须渐进，且展现新旧行为模式的内在冲突，拒绝突变。
+            </div>
+            <div class="settings-group" style="margin-bottom: 0;">
+                <div class="settings-item">
+                    <span>启用渐进式动态演进</span>
+                    <div class="toggle-switch" :class="{ active: dynamicEvolution }" @click="dynamicEvolution = !dynamicEvolution; persistSettings()"></div>
+                </div>
+                <div class="settings-item" @click="showToast('准备上传符合人设的对话数据集...')">
+                    <div><span style="display: block;">导入专属语料 / 聊天记录</span><span style="font-size: 11px; color: #999;">解析语感与口癖，跨模型无缝复刻 (支持 txt/json)</span></div>
+                    <span class="arrow">❯</span>
+                </div>
+                <div class="settings-item">
+                    <div><span style="display: block;">开启偏好规则沉淀</span><span style="font-size: 11px; color: #999;">自动从点赞/踩中学习雷区与喜好</span></div>
+                    <div class="toggle-switch" :class="{ active: preferenceLearning }" @click="preferenceLearning = !preferenceLearning; persistSettings()"></div>
+                </div>
+            </div>
+            <div class="modal-btn-group"><button class="modal-btn btn-cancel" @click="showEvolutionModal = false">关闭</button></div>
+        </div>
+    </div>
+
+    <!-- 9. 纠偏 -->
+    <div class="modal-overlay" :class="{ show: showRulesModal }" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-title">学习与纠偏规则</div>
+            <div style="font-size: 12px; color: #888; margin-bottom: 16px; line-height: 1.5;">
+                AI 会从对话中自动提炼行为准则，并将其作为高优先级指令注入。作用域可选：通用 / 单角色 / 单模型。
+            </div>
+            <div class="evolution-card" style="padding: 16px; margin-bottom: 16px;">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">已提炼的「学习规则」</div>
+                <template x-for="(rule, idx) in learningRules" :key="'lr-' + idx">
+                    <div class="rule-tag">
+                        <span x-text="rule"></span>
+                        <span class="badword-tag-close" @click="removeRule('learning', idx)" style="margin-left:6px;">×</span>
+                    </div>
+                </template>
+            </div>
+            <div class="evolution-card" style="padding: 16px; margin-bottom: 16px;">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">已生效的「纠偏规则」</div>
+                <template x-for="(rule, idx) in correctionRules" :key="'cr-' + idx">
+                    <div class="rule-tag correction">
+                        <span x-text="rule"></span>
+                        <span class="badword-tag-close" @click="removeRule('correction', idx)" style="margin-left:6px;">×</span>
+                    </div>
+                </template>
+            </div>
+            <div class="modal-btn-group"><button class="modal-btn btn-cancel" @click="showRulesModal = false">关闭</button></div>
+        </div>
+    </div>
+
+    <!-- 10. 分支 -->
+    <div class="modal-overlay" :class="{ show: showBranchModal }" x-cloak>
+        <div class="custom-modal">
+            <div class="modal-title">分支线管理</div>
+            <div style="font-size: 12px; color: #888; margin-bottom: 16px; line-height: 1.5;">
+                每个分支拥有完全独立的记忆与剧情走向。从当前节点创建分支将自动存档并复制现有状态。
+            </div>
+            <div class="preset-list">
+                <template x-for="branch in branches" :key="branch">
+                    <div class="preset-list-item" :class="{ active: currentBranch === branch }" @click="selectBranch(branch)">
+                        <span x-text="branch"></span>
+                    </div>
+                </template>
+            </div>
+            <button class="add-preset-btn" @click="createBranch()">+ 从当前节点创建新分支</button>
+            <div class="modal-btn-group">
+                <button class="modal-btn btn-cancel" @click="showBranchModal = false">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+      }
+    </script>
+</body>
+</html>

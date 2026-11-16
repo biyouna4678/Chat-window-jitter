@@ -79,6 +79,12 @@ document.addEventListener('alpine:init', () => {
                 case '转账': 
                     this.isTransferModalOpen = true; 
                     break;
+                case '线下模式':
+                    if (window.ChatStorage) {
+                        window.ChatStorage.syncOnlineContext(this.messages);
+                    }
+                    window.location.href = './offline.html';
+                    break;
                 default:
                     // 其他未开发功能可以在此处统一拦截
                     console.log('点击了待开发功能:', item.name);

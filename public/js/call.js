@@ -56,7 +56,7 @@ document.addEventListener('alpine:init', () => {
             
             if (state === 'active') {
                 this.startTimer();
-                if (type === 'video') this.startCamera();
+                if (type === 'video') this.startCamera().catch(() => {});
                 this.initSpeechRecognition();
             }
         },
@@ -64,7 +64,7 @@ document.addEventListener('alpine:init', () => {
         acceptCall() {
             this.callState = 'active';
             this.startTimer();
-            if (this.callType === 'video') this.startCamera();
+            if (this.callType === 'video') this.startCamera().catch(() => {});
             this.initSpeechRecognition();
         },
 
@@ -108,22 +108,36 @@ document.addEventListener('alpine:init', () => {
 
         async startCamera() {
             if (!this.cameraOn || this.isStartingCamera) return;
+            if (!navigator?.mediaDevices?.getUserMedia) {
+                console.warn('[Camera] getUserMedia is not supported in this environment');
+                this.cameraOn = false;
+                return;
+            }
             this.isStartingCamera = true;
             this.stopCamera(); 
 
             try {
-                const constraints = { video: { facingMode: this.isFrontCamera ? 'user' : 'environment' }, audio: false };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const constraints = { 
+                    video: { facingMode: this.isFrontCamera ? 'user' : 'environment' }, 
+                    audio: false 
+                };
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                } catch {
+                    // Fallback to generic video constraint
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                }
                 
                 if (!this.cameraOn || this.callState === 'idle') {
-                    stream.getTracks().forEach(track => track.stop());
+                    if (stream) stream.getTracks().forEach(track => track.stop());
                     this.isStartingCamera = false;
                     return;
                 }
                 this.mediaStream = stream;
                 this.bindVideoStream();
             } catch (err) { 
-                console.error(err);
+                console.warn('[Camera] Camera access was denied or device not found:', err?.message || err);
                 this.cameraOn = false; 
             } finally {
                 this.isStartingCamera = false;
