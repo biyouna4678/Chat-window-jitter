@@ -14,8 +14,11 @@ body {
 textarea, input { -webkit-user-select: text; user-select: text; }
 
 /* ================= 核心玻璃拟态（.wet-glass 已统一由 liquid-glass.css 提供） ================= */
-.dark-glass { background: rgba(255, 255, 255, 0.1); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
-.ios-menu { background: rgba(30, 30, 30, 0.85); -webkit-backdrop-filter: blur(30px) saturate(150%); backdrop-filter: blur(30px) saturate(150%); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5); }
+:where(.dark-glass, .ios-menu) { z-index: 0; }
+.dark-glass { position: relative; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+.dark-glass::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background: rgba(255, 255, 255, 0.1); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+.ios-menu { position: relative; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5); }
+.ios-menu::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background: rgba(30, 30, 30, 0.85); -webkit-backdrop-filter: blur(30px) saturate(150%); backdrop-filter: blur(30px) saturate(150%); }
 
 /* ================= 动画特效库 ================= */
 @keyframes ripple { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.2); opacity: 0; } }
@@ -23,7 +26,7 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .ripple-active { animation: ripple 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite; }
 
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+.animate-fade-in-up { animation: fadeInUp 0.4s ease-out; }
 
 @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
 .recording-dot { animation: pulse-red 1s infinite; }
@@ -35,7 +38,8 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .preview-map { position: relative; width: 100%; height: 240px; overflow: hidden; background-color: #2b2b2b; background-image: linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px), linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px); background-size: 10px 10px, 10px 10px, 40px 40px, 40px 40px; background-position: top left; display: flex; justify-content: center; align-items: center; }
 .preview-map::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.18) 0%, transparent 50%, rgba(0, 0, 0, 0.8) 100%); pointer-events: none; z-index: 1; }
 .silver-marker-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 10; }
-.hud-tag { position: absolute; left: 0; right: 0; margin: 0 auto; width: fit-content; bottom: calc(50% + 48px); z-index: 20; background: rgba(30, 30, 30, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 15px rgba(255, 255, 255, 0.05); display: flex; flex-direction: column; align-items: center; white-space: nowrap; animation: floatTag 3s ease-in-out infinite; will-change: transform; }
+.hud-tag { position: absolute; left: 0; right: 0; margin: 0 auto; width: fit-content; bottom: calc(50% + 48px); z-index: 20; padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 15px rgba(255, 255, 255, 0.05); display: flex; flex-direction: column; align-items: center; white-space: nowrap; animation: floatTag 3s ease-in-out infinite; }
+.hud-tag::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background: rgba(30, 30, 30, 0.6); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 .hud-tag::after { content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid rgba(255, 255, 255, 0.25); }
 .hud-tag .title { color: #ffffff; font-size: 14px; font-weight: 600; letter-spacing: 2px; padding-left: 2px; text-shadow: 0 0 6px rgba(255, 255, 255, 0.25); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hud-tag .subtitle { color: rgba(255, 255, 255, 0.5); font-size: 9px; font-family: monospace; letter-spacing: 1px; padding-left: 1px; margin-top: 1px; text-transform: uppercase; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -74,8 +78,10 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .card-map .pin-shadow { width: 16px; height: 6px; }
 
 /* 全息详情页 */
-.hologram-exit-btn { position: absolute; top: 24px; right: 24px; width: 48px; height: 48px; border-radius: 50%; z-index: 100; cursor: pointer; background: rgba(30, 30, 30, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 0 15px rgba(255, 255, 255, 0.05), inset 0 0 10px rgba(255, 255, 255, 0.05); display: flex; justify-content: center; align-items: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-.hologram-exit-btn:hover { background: rgba(50, 50, 50, 0.7); border-color: rgba(255, 255, 255, 0.5); box-shadow: 0 0 20px rgba(255, 255, 255, 0.2), inset 0 0 15px rgba(255, 255, 255, 0.1); transform: scale(1.05); }
+.hologram-exit-btn { position: absolute; top: 24px; right: 24px; width: 48px; height: 48px; border-radius: 50%; z-index: 100; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 0 15px rgba(255, 255, 255, 0.05), inset 0 0 10px rgba(255, 255, 255, 0.05); display: flex; justify-content: center; align-items: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+.hologram-exit-btn::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background: rgba(30, 30, 30, 0.6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.hologram-exit-btn:hover { border-color: rgba(255, 255, 255, 0.5); box-shadow: 0 0 20px rgba(255, 255, 255, 0.2), inset 0 0 15px rgba(255, 255, 255, 0.1); transform: scale(1.05); }
+.hologram-exit-btn:hover::before { background: rgba(50, 50, 50, 0.7); }
 .exit-icon { position: relative; width: 18px; height: 18px; }
 .exit-icon::before, .exit-icon::after { content: ''; position: absolute; width: 100%; height: 2px; background-color: #E0E0E0; border-radius: 2px; top: 50%; left: 0; transform: translateY(-50%); box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); transition: background-color 0.3s ease; }
 .exit-icon::before { transform: translateY(-50%) rotate(45deg); }
@@ -184,7 +190,6 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 
 /* ================= 4. 转账信笺卡片样式 ================= */
 .letter-card { width: 260px; border-radius: 20px; padding: 16px 18px 20px 18px; color: #ffffff; position: relative; overflow: hidden; }
-.letter-card::before { content: ''; position: absolute; top: 10px; right: 12px; width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 60%); filter: blur(1px); opacity: 0.6; pointer-events: none; }
 .letter-card::after { content: ''; position: absolute; bottom: 10px; left: -6px; width: 36px; height: 36px; border-radius: 50%; background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 70%); filter: blur(1.5px); opacity: 0.5; pointer-events: none; }
 .letter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; position: relative; z-index: 2; }
 .to-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 18px; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
@@ -194,30 +199,35 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .amount { font-size: 28px; font-weight: 500; letter-spacing: -0.5px; color: #ffffff; text-shadow: 0 4px 12px rgba(0,0,0,0.2); position: relative; display: inline-block; }
 .message { font-size: 12px; color: rgba(255, 255, 255, 0.9); line-height: 1.6; font-weight: 300; position: relative; z-index: 2; text-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.3s ease; }
 .state-received .status-text { color: #ffffff; font-weight: 600; }
-.state-received.wet-glass { background: rgba(255, 255, 255, 0.35); }
-.state-returned.wet-glass { background: rgba(160, 160, 160, 0.2); border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+.state-received.wet-glass::before { background: rgba(255, 255, 255, 0.35); }
+.state-returned.wet-glass::before { background: rgba(160, 160, 160, 0.2); }
+.state-returned.wet-glass { border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
 .state-returned .to-text, .state-returned .currency, .state-returned .message { opacity: 0.5; text-shadow: none; }
 .state-returned .amount { opacity: 0.5; text-shadow: none; }
 .state-returned .amount::after { content: ''; position: absolute; top: 50%; left: -2px; right: -2px; height: 1px; background-color: rgba(255, 255, 255, 0.7); transform: translateY(-50%); }
 .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
 
 /* ================= 5. PWA 全屏与兼容性解决方案（实战复盘标准版） ================= */
-/* 1. 页面死锁，禁止整体滚动 */
-html {
+/* 页面高度：用真实可见高度，避免 iOS 100vh 导致点击错位 */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
     height: 100%;
     overflow: hidden;
-    overscroll-behavior: none; /* 阻止整体页面橡皮筋回弹 */
+    overscroll-behavior: none;
+}
+
+html {
     background-color: #1a1a1a; /* 最底层的兜底色 */
 }
 
 /* 2. 背景层铺满物理屏幕（不要在 body 加任何 padding） */
 body {
-    margin: 0;
-    padding: 0;
-    width: 100vw;
-    height: 100vh; /* 核心：绝对不要用 100dvh */
-    overflow: hidden;
-    overscroll-behavior: none;
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    height: 100dvh;
     background-image: var(--chat-wallpaper, url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg'));
     background-size: cover;
     background-position: center;

@@ -56,24 +56,28 @@ textarea,
     display: none !important;
 }
 
-/* ================= iOS PWA 完美全屏锁死 ================= */
-html {
+/* ================= iOS PWA 完美全屏锁死（真实可见高度防点击错位） ================= */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
     height: 100%;
     overflow: hidden;
-    overscroll-behavior: none; /* 阻止整体页面橡皮筋回弹 */
+    overscroll-behavior: none;
+}
+
+html {
     background-color: #1a1a1a; /* 防白闪兜底色 */
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    margin: 0;
-    padding: 0;
-    width: 100vw;
-    height: 100vh; /* 绝对不使用 100dvh，防止 PWA 底部被安全区砍断 */
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    overscroll-behavior: none;
     background-color: transparent;
     touch-action: manipulation; /* 禁用双击缩放 */
     -webkit-text-size-adjust: 100%;
@@ -81,10 +85,9 @@ body {
 
 .bg-layer {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     background-image: url('../assets/images/offline-bg.jpg'), url('./assets/images/offline-bg.jpg'), url('/assets/images/offline-bg.jpg'), url('https://i.ibb.co/C3QwNp7x/IMG-9275.jpg');
     background-size: cover;
     background-position: center;
@@ -99,15 +102,14 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     overflow: hidden;
     background-color: transparent;
     transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-    transform: translateZ(0);
 }
 .main-container.is-leaving {
     opacity: 0;
-    transform: scale(0.975) translateZ(0);
+    transform: scale(0.975);
     pointer-events: none;
 }
 
@@ -123,7 +125,6 @@ body {
     padding-bottom: 10px;
     position: relative;
     flex-shrink: 0;
-    isolation: isolate;
     transition: padding 0.3s ease;
 }
 
@@ -139,12 +140,11 @@ body {
 }
 
 .nav-btn {
+    position: relative;
+    z-index: 0;
     height: 40px;
     padding: 0 16px;
     border-radius: 20px;
-    background: rgba(220, 220, 220, 0.7);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -155,17 +155,30 @@ body {
     font-weight: 600;
     color: #1a1a1a;
 }
-.nav-btn:active {
+.nav-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: rgba(220, 220, 220, 0.7);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+.nav-btn:active::before {
     background: rgba(200, 200, 200, 0.8);
 }
 
 .theme-dark .nav-btn {
-    background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.25);
     color: #ffffff;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
-.theme-dark .nav-btn:active {
+.theme-dark .nav-btn::before {
+    background: rgba(255, 255, 255, 0.12);
+}
+.theme-dark .nav-btn:active::before {
     background: rgba(255, 255, 255, 0.2);
 }
 
@@ -193,12 +206,11 @@ body.multi-select-mode .nav-btn.icon-only {
 }
 
 .avatar-wrapper {
+    position: relative;
     width: 76px;
     height: 76px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    -webkit-backdrop-filter: blur(10px) saturate(150%);
-    backdrop-filter: blur(10px) saturate(150%);
+    background: rgba(255, 255, 255, 0.28);
     border: 1px solid rgba(255, 255, 255, 0.7);
     box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 0.1);
     padding: 3px;
@@ -218,7 +230,6 @@ body.multi-select-mode .nav-btn.icon-only {
     height: 100%;
     object-fit: cover;
     border-radius: 50%;
-    transform: translateZ(0);
     pointer-events: none !important;
     -webkit-user-drag: none !important;
 }
@@ -228,9 +239,6 @@ body.multi-select-mode .nav-btn.icon-only {
     z-index: 10;
     width: 24px;
     height: 24px;
-    background: rgba(30, 30, 30, 0.8);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
     border-radius: 50%;
     display: flex;
     justify-content: center;
@@ -239,6 +247,17 @@ body.multi-select-mode .nav-btn.icon-only {
     transform: translateX(-50%);
     bottom: -4px;
     border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.center-heart::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: rgba(30, 30, 30, 0.8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
 }
 .center-heart svg {
     width: 10px;
@@ -307,7 +326,6 @@ body.mode-chapter .top-header {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain; /* 禁止滚动穿透到外层 body */
-    will-change: transform;
     transition: padding-bottom 0.3s ease;
 }
 
@@ -396,7 +414,6 @@ body.mode-chapter .chapter-container {
     height: 100%;
     border-radius: 6px;
     object-fit: cover;
-    transform: translateZ(0);
     pointer-events: none !important;
     touch-action: none !important;
     -webkit-user-drag: none !important;
@@ -409,10 +426,8 @@ body.mode-chapter .chapter-container {
     font-size: 14px;
     line-height: 1.6;
     font-weight: 500;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease;
     transform-origin: center;
-    transform: translateZ(0);
-    will-change: transform, box-shadow;
     position: relative;
 }
 .message-row.left .bubble {
@@ -425,25 +440,29 @@ body.mode-chapter .chapter-container {
 .bubble.pressing,
 .narration-text.pressing,
 .sys-bubble.pressing {
-    transform: scale(1.04) translateZ(0);
+    transform: scale(1.04);
     z-index: 10;
     animation: physicalShake 0.3s ease-in-out;
 }
 .bubble.pressing {
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+}
+.bubble.pressing::before {
     background: rgba(255, 255, 255, 0.5);
 }
 .theme-dark .bubble.pressing {
-    background: rgba(255, 255, 255, 0.16);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.45) inset;
+}
+.theme-dark .bubble.pressing::before {
+    background: rgba(255, 255, 255, 0.16);
 }
 
 @keyframes physicalShake {
-    0% { transform: scale(1.04) translateZ(0) translateY(0); }
-    25% { transform: scale(1.04) translateZ(0) translateY(-2px) rotate(0.5deg); }
-    50% { transform: scale(1.04) translateZ(0) translateY(1px) rotate(-0.5deg); }
-    75% { transform: scale(1.04) translateZ(0) translateY(-1px); }
-    100% { transform: scale(1.04) translateZ(0) translateY(0); }
+    0% { transform: scale(1.04) translateY(0); }
+    25% { transform: scale(1.04) translateY(-2px) rotate(0.5deg); }
+    50% { transform: scale(1.04) translateY(1px) rotate(-0.5deg); }
+    75% { transform: scale(1.04) translateY(-1px); }
+    100% { transform: scale(1.04) translateY(0); }
 }
 
 /* ============ 篇章模式消息 ============ */
@@ -481,9 +500,7 @@ body.mode-chapter .chapter-container {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    -webkit-backdrop-filter: blur(10px) saturate(150%);
-    backdrop-filter: blur(10px) saturate(150%);
+    background: rgba(255, 255, 255, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.7);
     box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 0.1);
     padding: 2px;
@@ -561,7 +578,7 @@ body.mode-chapter .chapter-container {
     margin-right: 4px;
 }
 .chapter-bubble.pressing {
-    transform: scale(1.02) translateZ(0);
+    transform: scale(1.02);
     z-index: 10;
     animation: physicalShake 0.3s ease-in-out;
 }

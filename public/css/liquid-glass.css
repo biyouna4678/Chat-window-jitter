@@ -1,15 +1,19 @@
 /* ========================================================
    Youna Phone - 终极自适应液态玻璃 (Liquid Glass) 样式
    同时用于线上聊天窗口 (index.html) 与线下模式 (offline.html)
+   已按 iOS WebKit 稳定规范重构：backdrop-filter 移至 ::before (isolation:isolate)
    ======================================================== */
 
 /* --------------------------------------------------------
-   1. 基础透明湿玻璃 (用于普通聊天消息气泡)
+   1. 基础透明湿玻璃 (用于固定顶栏/输入栏/工具栏与最近 N 条聊天气泡)
    -------------------------------------------------------- */
+/* 用 z-index: 0 形成层叠上下文而不触发 Backdrop Root，确保 ::before 的 backdrop-filter 能穿透采样背后壁纸 */
+:where(.wet-glass, .sys-bubble, .jelly) {
+    z-index: 0;
+}
+
 .wet-glass {
-    background: rgba(255, 255, 255, 0.25);
-    -webkit-backdrop-filter: blur(14px) saturate(150%) brightness(104%);
-    backdrop-filter: blur(14px) saturate(150%) brightness(104%);
+    position: relative;
     border: 1px solid rgba(255, 255, 255, 0.65);
     border-bottom-color: rgba(255, 255, 255, 0.2);
     border-right-color: rgba(255, 255, 255, 0.25);
@@ -17,15 +21,27 @@
         inset 0 1px 2px 0 rgba(255, 255, 255, 0.65),
         inset 0 -1px 2px 0 rgba(0, 0, 0, 0.06),
         0 8px 24px 0 rgba(0, 0, 0, 0.08);
-    transform: translateZ(0);
-    transition: all 0.3s ease;
+    transition: border-color 0.3s, box-shadow 0.3s; /* 不使用 transition:all 或常驻 translateZ(0) */
+}
+.wet-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: auto;
+    height: auto;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 1;
+    filter: none;
+    background: rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(14px) saturate(150%) brightness(104%);
+    backdrop-filter: blur(14px) saturate(150%) brightness(104%);
+    transition: background 0.3s;
 }
 
 /* 深色模式：黑曜石高透磨砂 (透出背景的光影) */
 .theme-dark .wet-glass {
-    background: rgba(255, 255, 255, 0.08);
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
-    backdrop-filter: blur(10px) saturate(120%);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-top-color: rgba(255, 255, 255, 0.5);  /* 顶边强烈反光 */
     border-left-color: rgba(255, 255, 255, 0.3); /* 左边微弱反光 */
@@ -34,61 +50,96 @@
         inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
         0 8px 24px 0 rgba(0, 0, 0, 0.4);
 }
+.theme-dark .wet-glass::before {
+    background: rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
+}
+
+/* 轻量玻璃：给较早的历史气泡（超出模糊窗口的）降级用，不开 backdrop-filter */
+.wet-glass.lite::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.28));
+}
+.theme-dark .wet-glass.lite::before {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+}
 
 /* --------------------------------------------------------
-   2. 系统气泡 (居中提示文字，材质更轻薄)
+   2. 系统气泡 (居中提示文字，材质更轻薄，同样将模糊放至 ::before 并支持 .lite)
    -------------------------------------------------------- */
 .sys-bubble {
-    background: rgba(255, 255, 255, 0.2);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
+    position: relative;
     border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     color: #374151;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s, box-shadow 0.3s, color 0.3s;
     text-wrap: balance; /* 防止系统消息最后一个符号落单 */
+}
+.sys-bubble::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.2);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    transition: background 0.3s;
 }
 
 /* 深色模式：极轻的液态贴膜，不抢眼但清晰 */
 .theme-dark .sys-bubble {
-    background: rgba(255, 255, 255, 0.05);
-    -webkit-backdrop-filter: blur(8px) saturate(120%);
-    backdrop-filter: blur(8px) saturate(120%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-top-color: rgba(255, 255, 255, 0.3);
     box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.theme-dark .sys-bubble::before {
+    background: rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    backdrop-filter: blur(8px) saturate(120%);
+}
+.sys-bubble.lite::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.32);
+}
+.theme-dark .sys-bubble.lite::before {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* --------------------------------------------------------
    3. 文字颜色自适应 (根据 .theme-dark 切换)
    -------------------------------------------------------- */
-/* 浅色模式 */
 .text-header { color: #1f2937; transition: color 0.3s, text-shadow 0.3s; }
 .text-sub { color: #4b5563; transition: color 0.3s, text-shadow 0.3s; }
-.text-bubble { color: #1f2937; } /* 气泡内的文字永远保持深色 */
+.text-bubble { color: #1f2937; }
 
-/* 深色模式：全部反白，并加上柔和的文字阴影保证可读性 */
 .theme-dark .text-header { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
 .theme-dark .text-sub { color: #e5e7eb; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
 .theme-dark .text-bubble { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); }
-.theme-dark .sys-bubble { color: #ffffff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
 
 /* --------------------------------------------------------
    4. 输入框组件专属反色处理
    -------------------------------------------------------- */
-/* 深色模式下，强制把黑色图标(PNG/SVG)滤成纯白，并去掉原有的灰色半透明 */
 .theme-dark .input-icon {
     filter: brightness(0) invert(1);
     opacity: 1 !important;
 }
-
-/* 深色模式下，输入框的占位符文字变白 */
 .theme-dark .input-text::placeholder {
     color: rgba(255, 255, 255, 0.6) !important;
 }
+.theme-dark .input-text {
+    color: #ffffff;
+    caret-color: #ffffff;
+}
 
 /* --------------------------------------------------------
-   5. 顶部/底部磨砂渐隐层 (遮挡滚动内容)
+   5. 顶部/底部磨砂渐隐层 (遮挡滚动内容，自身无子元素)
    -------------------------------------------------------- */
 .glass-fade-top {
     background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
@@ -98,7 +149,6 @@
     mask: linear-gradient(#000 40%, transparent 100%);
     transition: background 0.3s;
 }
-
 .theme-dark .glass-fade-top {
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
 }
@@ -111,39 +161,99 @@
     mask: linear-gradient(to bottom, transparent 0%, #000 60%);
     transition: background 0.3s;
 }
-
 .theme-dark .glass-fade-bottom {
     background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
 }
 
 /* --------------------------------------------------------
-   6. 补充：工具栏图标磁贴、输入框本体、位置卡片与按钮深色适配
+   6. 工具栏容器 + 果冻方块 (透明、中性、无嵌套 backdrop-filter)
    -------------------------------------------------------- */
-.theme-dark .input-text {
-    color: #ffffff;
-    caret-color: #ffffff;
+.tools-panel {
+    border-radius: 28px 28px 0 0;
+    overflow: hidden;
+    border-bottom-width: 0;
+    transition: max-height 0.3s ease-out, border-color 0.3s, box-shadow 0.3s;
 }
 
-.tool-tile {
-    background: rgba(255, 255, 255, 0.78);
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    transition: all 0.25s ease;
+.jelly {
+    --a: 255, 255, 255;
+    --b: 255, 255, 255;
+    --d: 120, 128, 140;
+    position: relative;
+    border-radius: 30px;
+    /* 中间几乎全透，越靠边越"厚"，像真正的凝胶 */
+    background: radial-gradient(90% 90% at 50% 45%,
+        rgba(var(--a), 0.03) 0%,
+        rgba(var(--b), 0.07) 62%,
+        rgba(var(--d), 0.16) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-bottom-color: rgba(255, 255, 255, 0.25);
+    box-shadow:
+        inset 0 2px 2px rgba(255, 255, 255, 0.9),
+        inset 0 0 0 3px rgba(255, 255, 255, 0.14),
+        inset 5px 6px 10px rgba(255, 255, 255, 0.22),
+        inset -4px -7px 12px rgba(var(--d), 0.22),
+        inset 0 -3px 5px rgba(255, 255, 255, 0.32),
+        0 8px 16px rgba(var(--d), 0.14),
+        0 2px 4px rgba(var(--d), 0.08);
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    /* 注意：这里不写 backdrop-filter，也不写常驻 will-change */
+}
+.theme-dark .jelly {
+    --a: 255, 255, 255;
+    --b: 255, 255, 255;
+    --d: 200, 205, 215;
+    border-color: rgba(255, 255, 255, 0.2);
+    border-top-color: rgba(255, 255, 255, 0.6);
+}
+/* 左上镜面高光 */
+.jelly::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    left: 9%;
+    top: 8%;
+    width: 46%;
+    height: 28%;
+    border-radius: 50% / 70% 70% 40% 40%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.06));
+    filter: blur(0.6px);
+    transform: rotate(-6deg);
+}
+/* 右下反光 */
+.jelly::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    right: 12%;
+    bottom: 8%;
+    width: 32%;
+    height: 13%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0));
+    filter: blur(1.5px);
+}
+/* 工具栏图标块圆角（用双 class 提高优先级） */
+.jelly.icon {
+    border-radius: 24px;
+}
+/* 图标：灰度 + 下沿白色微高光，像嵌在果冻里 */
+.jelly-ico {
+    filter: grayscale(1) drop-shadow(0 1px 0 rgba(255, 255, 255, 0.8));
+    opacity: 0.62;
+}
+.theme-dark .jelly-ico {
+    filter: grayscale(1) brightness(0) invert(1);
+    opacity: 0.85;
 }
 
-.theme-dark .tool-tile {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
-.tool-drag-bar {
-    background: rgba(156, 163, 175, 0.55);
-}
-.theme-dark .tool-drag-bar {
-    background: rgba(255, 255, 255, 0.35);
-}
-
+/* --------------------------------------------------------
+   7. 位置卡片与发送按钮深色适配
+   -------------------------------------------------------- */
 .send-action-btn {
     background: #111827;
     color: #ffffff;
@@ -163,7 +273,7 @@
 }
 
 /* --------------------------------------------------------
-   7. 页面无缝切换动效与轻提示 (GPU 合成，零布局抖动)
+   8. 页面无缝切换动效与轻提示 (无常驻 translateZ / will-change)
    -------------------------------------------------------- */
 .page-transition-curtain {
     position: fixed;
@@ -172,8 +282,6 @@
     background: rgba(242, 244, 248, 0.72);
     -webkit-backdrop-filter: blur(22px) saturate(140%);
     backdrop-filter: blur(22px) saturate(140%);
-    transform: translateZ(0);
-    will-change: opacity;
 }
 .theme-dark .page-transition-curtain {
     background: rgba(18, 18, 20, 0.78);
@@ -182,25 +290,24 @@
 @keyframes pwaPageEnter {
     0% {
         opacity: 0;
-        transform: scale(1.018) translateZ(0);
+        transform: scale(1.018);
     }
     100% {
         opacity: 1;
-        transform: scale(1) translateZ(0);
+        transform: scale(1);
     }
 }
 
 html.pwa-nav-entering .pwa-root,
 html.pwa-nav-entering .main-container {
     animation: pwaPageEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    will-change: opacity, transform;
 }
 
 .online-toast {
     position: fixed;
     top: max(76px, calc(env(safe-area-inset-top, 12px) + 64px));
     left: 50%;
-    transform: translateX(-50%) translateZ(0);
+    transform: translateX(-50%);
     z-index: 950;
     padding: 8px 18px;
     border-radius: 9999px;
@@ -209,4 +316,3 @@ html.pwa-nav-entering .main-container {
     white-space: nowrap;
     pointer-events: none;
 }
-

@@ -69,11 +69,12 @@
                 const runWarm = () => {
                     const assets = [
                         './index.html',
-                        './css/style.css?v=24',
-                        './js/chat.js?v=24',
-                        './js/call.js?v=24',
-                        './js/map.js?v=24',
-                        './js/transfer.js?v=24'
+                        './css/style.css?v=26',
+                        './js/chat.js?v=26',
+                        './js/call.js?v=26',
+                        './js/map.js?v=26',
+                        './js/transfer.js?v=26',
+                        './js/jelly.js?v=26'
                     ];
                     assets.forEach(url => {
                         fetch(url, { credentials: 'same-origin' }).catch(() => {});

@@ -43,13 +43,14 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="./css/style.css?v=24">
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=24">
-    <script src="./js/storage.js?v=24"></script>
-    <script src="./js/chat.js?v=24"></script>
-    <script src="./js/call.js?v=24"></script>
-    <script src="./js/map.js?v=24"></script>
-    <script src="./js/transfer.js?v=24"></script>
+    <link rel="stylesheet" href="./css/style.css?v=26">
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=26">
+    <script src="./js/storage.js?v=26"></script>
+    <script src="./js/chat.js?v=26"></script>
+    <script src="./js/call.js?v=26"></script>
+    <script src="./js/map.js?v=26"></script>
+    <script src="./js/transfer.js?v=26"></script>
+    <script defer src="./js/jelly.js?v=26"></script>
 </head>
 <body class="font-sans antialiased overflow-hidden">
 
@@ -75,15 +76,15 @@
              style="display: none;"></div>
 
         <!-- ================= 1. 聊天主界面 ================= -->
-        <div class="w-full h-full flex flex-col relative transition-[transform,opacity] duration-200 ease-out transform-gpu"
-             :class="(callState !== 'idle' && !isMinimized) || isTransitioningOffline ? 'opacity-0 scale-[0.97] pointer-events-none' : 'opacity-100 scale-100'">
+        <div class="w-full h-full flex flex-col relative transition-[transform,opacity] duration-200 ease-out"
+             :class="(callState !== 'idle' && !isMinimized) || isTransitioningOffline ? 'opacity-0 scale-[0.97] pointer-events-none' : 'opacity-100'">
             
             <!-- 顶部磨砂渐隐层（遮挡滚动内容） -->
             <div class="absolute top-0 left-0 w-full h-[100px] glass-fade-top pointer-events-none z-20"></div>
 
             <!-- 顶部固定栏 -->
             <div class="flex items-center justify-between w-full gap-2 shrink-0 mb-4 px-3 relative z-40 pwa-top-safe">
-                <div class="wet-glass rounded-full h-[56px] px-3 flex items-center w-fit max-w-[75%] transition-all duration-300">
+                <div class="wet-glass rounded-full h-[56px] px-3 flex items-center w-fit max-w-[75%]">
                     <button class="p-1 ml-0 text-header transition-colors rounded-full hover:bg-white/20 shrink-0" @click="alert('执行返回操作')">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                     </button>
@@ -152,10 +153,11 @@
             <div class="flex-1 min-h-0 overflow-y-auto pb-6 flex flex-col gap-5 px-4 relative z-10 hide-scrollbar" id="chat-scroll">
                 <template x-for="(msg, index) in messages" :key="msg.id">
                     <div class="w-full animate-fade-in-up">
-                        <!-- 系统消息：居中，无头像，使用专属液态贴纸材质 -->
+                        <!-- 系统消息：居中，无头像，使用专属液态贴纸材质（超出最近 20 条降级为 .lite） -->
                         <template x-if="msg.sender === 'system'">
                             <div class="flex w-full justify-center my-2">
                                 <div class="sys-bubble rounded-xl px-4 py-1.5 text-[12px] font-medium tracking-wide text-center break-words w-fit max-w-[90%]"
+                                     :class="messages.length - index > 20 ? 'lite' : ''"
                                      x-text="msg.text"></div>
                             </div>
                         </template>
@@ -181,8 +183,11 @@
                                     </div>
 
                                     <template x-if="msg.type === 'text'">
-                                        <div class="wet-glass px-4 py-2.5 text-bubble text-[15px] leading-snug text-left w-fit break-words pointer-events-auto" 
-                                             :class="msg.sender === 'me' ? 'rounded-[22px] rounded-br-[6px]' : 'rounded-[22px] rounded-bl-[6px]'">
+                                        <div class="wet-glass px-4 py-2.5 text-bubble text-[15px] leading-snug text-left w-fit break-words pointer-events-auto"
+                                             :class="[
+                                                 messages.length - index > 20 ? 'lite' : '',
+                                                 msg.sender === 'me' ? 'rounded-[22px] rounded-br-[6px]' : 'rounded-[22px] rounded-bl-[6px]'
+                                             ]">
                                             <p x-text="msg.text"></p>
                                         </div>
                                     </template>
@@ -197,7 +202,7 @@
 
                                     <template x-if="msg.type === 'location'">
                                         <div class="chat-location-card cursor-pointer active:scale-95 transition-transform" @click="selectedLocation = msg.data; showLocationDetail = true;">
-                                            <div class="card-header wet-glass">
+                                            <div class="card-header wet-glass" :class="messages.length - index > 20 ? 'lite' : ''">
                                                 <div class="card-title" x-text="msg.data.name || '未命名地点'"></div>
                                                 <div class="card-subtitle" x-text="msg.data.address || '暂无具体地址'"></div>
                                             </div>
@@ -218,8 +223,9 @@
                                     </template>
 
                                     <template x-if="msg.type === 'transfer'">
-                                        <div class="wet-glass letter-card" 
+                                        <div class="wet-glass letter-card"
                                              :class="{
+                                                 'lite': messages.length - index > 20,
                                                  'state-received': msg.data.status === 'accepted',
                                                  'state-returned': msg.data.status === 'rejected'
                                              }">
@@ -284,39 +290,40 @@
                     </div>
                 </div>
 
-                <!-- 工具栏弹出面板：使用 wet-glass 材质，配合上滑动画 -->
-                <div class="w-full overflow-hidden transition-[max-height] duration-300 ease-out transform-gpu will-change-[max-height] wet-glass rounded-t-2xl border-t border-white/20" 
-                     :class="showToolsPanel ? 'max-h-[360px]' : 'max-h-0 !border-0'">
-                    <div class="min-h-[330px] flex flex-col w-full pwa-panel-bottom-safe" @touchstart="handleTouchStart($event)" @touchend="handleTouchEnd($event)">
-                        <!-- 拖拽把手 -->
-                        <div class="w-10 h-1.5 tool-drag-bar rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
+                <!-- 工具栏弹出面板：玻璃容器 + 透明果冻方块（外层不加 transform-gpu / will-change） -->
+                <div class="wet-glass tools-panel w-full"
+                     :class="showToolsPanel ? 'max-h-[360px]' : 'max-h-0 !border-0 !shadow-none'">
+                    <div class="h-[360px] flex flex-col w-full pb-[env(safe-area-inset-bottom)]" @touchstart="handleTouchStart($event)" @touchend="handleTouchEnd($event)">
+                        <!-- 顶部拖拽条：半透明白，浅色/深色都可见 -->
+                        <div class="w-10 h-1.5 bg-white/60 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
                         <!-- 图标容器 -->
                         <div class="flex-1 relative px-4 pt-2">
-                            <div x-show="currentPage === 0" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
+                            <div x-show="currentPage === 0" class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
                                 <template x-for="(item, index) in page1" :key="index">
-                                    <div class="flex flex-col items-center gap-1.5 cursor-pointer group" @click="handleToolClick(item)">
-                                        <div class="w-[64px] h-[64px] tool-tile rounded-[22px] flex items-center justify-center group-active:scale-95 transition-transform">
-                                            <img :src="item.icon" class="input-icon w-10 h-10 object-contain opacity-[0.65] grayscale">
+                                    <div class="flex flex-col items-center gap-1.5 cursor-pointer" @click="handleToolClick(item)">
+                                        <div class="jelly icon w-[64px] h-[64px] flex items-center justify-center">
+                                            <img :src="item.icon" class="jelly-ico w-10 h-10 object-contain pointer-events-none">
                                         </div>
                                         <span class="text-[13px] text-sub font-medium whitespace-nowrap" x-text="item.name"></span>
                                     </div>
                                 </template>
                             </div>
-                            <div x-show="currentPage === 1" x-transition.opacity class="grid grid-cols-4 gap-y-4 gap-x-2 w-full absolute top-2 left-0 px-4">
+                            <div x-show="currentPage === 1" class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
                                 <template x-for="(item, index) in page2" :key="index">
-                                    <div class="flex flex-col items-center gap-1.5 cursor-pointer group" @click="handleToolClick(item)">
-                                        <div class="w-[64px] h-[64px] tool-tile rounded-[22px] flex items-center justify-center group-active:scale-95 transition-transform">
-                                            <img :src="item.icon" class="input-icon w-10 h-10 object-contain opacity-[0.65] grayscale">
+                                    <div class="flex flex-col items-center gap-1.5 cursor-pointer" @click="handleToolClick(item)">
+                                        <div class="jelly icon w-[64px] h-[64px] flex items-center justify-center">
+                                            <img :src="item.icon" class="jelly-ico w-10 h-10 object-contain pointer-events-none">
                                         </div>
                                         <span class="text-[13px] text-sub font-medium whitespace-nowrap" x-text="item.name"></span>
                                     </div>
                                 </template>
                             </div>
                         </div>
-                        <div class="flex items-center justify-center pb-8 pt-2 shrink-0">
+                        <!-- 分页点：半透明白 -->
+                        <div class="flex items-center justify-center pb-6 pt-2 shrink-0">
                             <div class="flex items-center gap-2">
-                                <button @click="currentPage = 0" :class="currentPage === 0 ? (isDarkMode ? 'bg-white' : 'bg-gray-600') : (isDarkMode ? 'bg-white/30' : 'bg-gray-400/50')" class="w-2 h-2 rounded-full transition-colors"></button>
-                                <button @click="currentPage = 1" :class="currentPage === 1 ? (isDarkMode ? 'bg-white' : 'bg-gray-600') : (isDarkMode ? 'bg-white/30' : 'bg-gray-400/50')" class="w-2 h-2 rounded-full transition-colors"></button>
+                                <button type="button" @click="currentPage = 0" :class="currentPage === 0 ? 'bg-white/80' : 'bg-white/35'" class="w-2 h-2 rounded-full transition-colors"></button>
+                                <button type="button" @click="currentPage = 1" :class="currentPage === 1 ? 'bg-white/80' : 'bg-white/35'" class="w-2 h-2 rounded-full transition-colors"></button>
                             </div>
                         </div>
                     </div>
@@ -499,7 +506,7 @@
                     <div x-show="videoSubtitlesOn" x-ref="videoSubtitleBox" class="w-full max-h-[300px] overflow-y-auto flex flex-col gap-4 px-2 pointer-events-auto mb-4 hide-scrollbar" style="mask-image: linear-gradient(to bottom, transparent, black 10%, black 100%); -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 100%);">
                         <template x-for="(sub, index) in videoSubtitles" :key="index">
                             <div class="animate-fade-in-up w-full flex flex-col">
-                                <div x-show="sub.type === 'narration'" class="flex justify-center my-1"><span class="text-gray-300/80 text-[13px] italic bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm" x-text="sub.text"></span></div>
+                                <div x-show="sub.type === 'narration'" class="flex justify-center my-1"><span class="text-gray-300/80 text-[13px] italic bg-black/35 px-3 py-1 rounded-full" x-text="sub.text"></span></div>
                                 <div x-show="sub.type === 'dialogue'" class="flex w-full" :class="sub.speaker === 'Me' ? 'justify-end' : 'justify-start'">
                                     <div class="flex flex-col p-3.5 rounded-2xl shadow-lg w-fit max-w-[85%]" :class="sub.speaker === 'Me' ? 'bg-white/90 rounded-tr-sm items-end' : 'bg-black/50 rounded-tl-sm items-start border border-white/5'">
                                         <p class="text-[15px] font-medium leading-snug text-left" :class="sub.speaker === 'Me' ? 'text-gray-900' : 'text-white'" x-text="sub.original"></p>

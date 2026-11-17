@@ -34,18 +34,18 @@
       })();
     </script>
 
-    <link rel="stylesheet" href="./css/offline-base.css?v=24">
-    <link rel="stylesheet" href="./css/offline-components.css?v=24">
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=24">
+    <link rel="stylesheet" href="./css/offline-base.css?v=26">
+    <link rel="stylesheet" href="./css/offline-components.css?v=26">
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=26">
     <style id="user-custom-css"></style>
     <style id="user-statusbar-css"></style>
 
     <!-- 共享存储与线下模块化脚本 -->
-    <script src="./js/storage.js?v=24"></script>
-    <script src="./js/offline-data.js?v=24"></script>
-    <script src="./js/offline-chat.js?v=24"></script>
-    <script src="./js/offline-settings.js?v=24"></script>
-    <script src="./js/offline-app.js?v=24"></script>
+    <script src="./js/storage.js?v=26"></script>
+    <script src="./js/offline-data.js?v=26"></script>
+    <script src="./js/offline-chat.js?v=26"></script>
+    <script src="./js/offline-settings.js?v=26"></script>
+    <script src="./js/offline-app.js?v=26"></script>
 
     <!-- Alpine.js (与线上页同版本 CDN 以复用缓存) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -97,7 +97,7 @@
         <main class="chat-area" id="chat-area">
             <div class="chapter-container" id="messages-container">
                 <!-- 对白模式 -->
-                <template x-for="msg in dialogueMessages" :key="'d-' + msg.id">
+                <template x-for="(msg, index) in dialogueMessages" :key="'d-' + msg.id">
                     <div class="message-row feedback-target"
                          x-show="currentMode === 'dialogue'"
                          :class="rowClasses(msg)"
@@ -105,21 +105,21 @@
                          :data-id="msg.id"
                          @click="handleRowClick($event, msg)">
 
-                        <!-- AI 头像 -->
-                        <div class="wet-glass msg-avatar-wrapper" x-show="msg.role === 'ai'"><img :src="msg.avatar" alt="avatar"></div>
+                        <!-- AI 头像（使用 .lite 不消耗模糊图层） -->
+                        <div class="wet-glass lite msg-avatar-wrapper" x-show="msg.role === 'ai'"><img :src="msg.avatar" alt="avatar"></div>
 
-                        <!-- 气泡内容 -->
+                        <!-- 气泡内容（仅最近 20 条开启真实 backdrop-filter） -->
                         <div class="wet-glass bubble text-bubble"
                              x-show="msg.role === 'ai' || msg.role === 'user'"
-                             :class="{ pressing: pressingMsgId === msg.id }"
+                             :class="{ 'lite': dialogueMessages.length - index > 20, pressing: pressingMsgId === msg.id }"
                              x-text="msg.content"
                              @touchstart="startPress($event, msg, $el)"
                              @touchend="endPress"
                              @touchmove="cancelPress"
                              @contextmenu.prevent="showMenuFromEvent($event, msg, $el)"></div>
 
-                        <!-- User 头像 -->
-                        <div class="wet-glass msg-avatar-wrapper" x-show="msg.role === 'user'"><img :src="msg.avatar" alt="avatar"></div>
+                        <!-- User 头像（使用 .lite 不消耗模糊图层） -->
+                        <div class="wet-glass lite msg-avatar-wrapper" x-show="msg.role === 'user'"><img :src="msg.avatar" alt="avatar"></div>
 
                         <!-- 叙述文本 -->
                         <div class="narration-text"
@@ -134,7 +134,7 @@
                         <!-- 系统消息：居中，无头像，使用专属液态贴纸材质 -->
                         <div class="sys-bubble-row" x-show="msg.role === 'system' || msg.sender === 'system'">
                             <div class="sys-bubble"
-                                 :class="{ pressing: pressingMsgId === msg.id }"
+                                 :class="{ 'lite': dialogueMessages.length - index > 20, pressing: pressingMsgId === msg.id }"
                                  x-text="msg.content || msg.text"
                                  @touchstart="startPress($event, msg, $el)"
                                  @touchend="endPress"
@@ -145,7 +145,7 @@
                 </template>
 
                 <!-- 篇章模式 -->
-                <template x-for="msg in chapterMessages" :key="'c-' + msg.id">
+                <template x-for="(msg, index) in chapterMessages" :key="'c-' + msg.id">
                     <div class="chapter-item feedback-target"
                          x-show="currentMode === 'chapter'"
                          :class="chapterClasses(msg)"
@@ -156,7 +156,7 @@
                         <!-- 系统消息：居中，无头像，使用专属液态贴纸材质 -->
                         <div class="sys-bubble-row" x-show="msg.role === 'system' || msg.sender === 'system'">
                             <div class="sys-bubble"
-                                 :class="{ pressing: pressingMsgId === msg.id }"
+                                 :class="{ 'lite': chapterMessages.length - index > 20, pressing: pressingMsgId === msg.id }"
                                  x-text="msg.content || msg.text"
                                  @touchstart="startPress($event, msg, $el)"
                                  @touchend="endPress"
@@ -182,7 +182,7 @@
                             </div>
                         </div>
 
-                        <div class="wet-glass chapter-bubble" :class="{ 'right': msg.role === 'user' }" x-show="msg.role !== 'narration' && msg.role !== 'system' && msg.sender !== 'system'">
+                        <div class="wet-glass chapter-bubble" :class="{ 'lite': chapterMessages.length - index > 20, 'right': msg.role === 'user' }" x-show="msg.role !== 'narration' && msg.role !== 'system' && msg.sender !== 'system'">
                             <p class="chapter-paragraph text-bubble"
                                :class="{ pressing: pressingMsgId === msg.id }"
                                x-html="msg.content"
