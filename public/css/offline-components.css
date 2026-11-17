@@ -205,6 +205,9 @@ body.multi-select-mode .multi-action-bar {
     top: max(50px, calc(env(safe-area-inset-top, 16px) + 20px));
     left: 50%;
     transform: translateX(-50%) translateY(-20px);
+    background: rgba(30, 30, 30, 0.75);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     color: #fff;
     padding: 10px 24px;
     border-radius: 30px;
@@ -217,17 +220,6 @@ body.multi-select-mode .multi-action-bar {
     pointer-events: none;
     z-index: 9000;
     white-space: nowrap;
-}
-.elegant-toast::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    pointer-events: none;
-    background: rgba(30, 30, 30, 0.75);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
 }
 .elegant-toast.show {
     opacity: 1;

@@ -43,14 +43,14 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="./css/style.css?v=26">
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=26">
-    <script src="./js/storage.js?v=26"></script>
-    <script src="./js/chat.js?v=26"></script>
-    <script src="./js/call.js?v=26"></script>
-    <script src="./js/map.js?v=26"></script>
-    <script src="./js/transfer.js?v=26"></script>
-    <script defer src="./js/jelly.js?v=26"></script>
+    <link rel="stylesheet" href="./css/style.css?v=27">
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=27">
+    <script src="./js/storage.js?v=27"></script>
+    <script src="./js/chat.js?v=27"></script>
+    <script src="./js/call.js?v=27"></script>
+    <script src="./js/map.js?v=27"></script>
+    <script src="./js/transfer.js?v=27"></script>
+    <script defer src="./js/jelly.js?v=27"></script>
 </head>
 <body class="font-sans antialiased overflow-hidden">
 
@@ -153,11 +153,10 @@
             <div class="flex-1 min-h-0 overflow-y-auto pb-6 flex flex-col gap-5 px-4 relative z-10 hide-scrollbar" id="chat-scroll">
                 <template x-for="(msg, index) in messages" :key="msg.id">
                     <div class="w-full animate-fade-in-up">
-                        <!-- 系统消息：居中，无头像，使用专属液态贴纸材质（超出最近 20 条降级为 .lite） -->
+                        <!-- 系统消息：居中，无头像，使用专属液态贴纸材质 -->
                         <template x-if="msg.sender === 'system'">
                             <div class="flex w-full justify-center my-2">
                                 <div class="sys-bubble rounded-xl px-4 py-1.5 text-[12px] font-medium tracking-wide text-center break-words w-fit max-w-[90%]"
-                                     :class="messages.length - index > 20 ? 'lite' : ''"
                                      x-text="msg.text"></div>
                             </div>
                         </template>
@@ -184,10 +183,7 @@
 
                                     <template x-if="msg.type === 'text'">
                                         <div class="wet-glass px-4 py-2.5 text-bubble text-[15px] leading-snug text-left w-fit break-words pointer-events-auto"
-                                             :class="[
-                                                 messages.length - index > 20 ? 'lite' : '',
-                                                 msg.sender === 'me' ? 'rounded-[22px] rounded-br-[6px]' : 'rounded-[22px] rounded-bl-[6px]'
-                                             ]">
+                                             :class="msg.sender === 'me' ? 'rounded-[22px] rounded-br-[6px]' : 'rounded-[22px] rounded-bl-[6px]'">
                                             <p x-text="msg.text"></p>
                                         </div>
                                     </template>
@@ -202,7 +198,7 @@
 
                                     <template x-if="msg.type === 'location'">
                                         <div class="chat-location-card cursor-pointer active:scale-95 transition-transform" @click="selectedLocation = msg.data; showLocationDetail = true;">
-                                            <div class="card-header wet-glass" :class="messages.length - index > 20 ? 'lite' : ''">
+                                            <div class="card-header wet-glass">
                                                 <div class="card-title" x-text="msg.data.name || '未命名地点'"></div>
                                                 <div class="card-subtitle" x-text="msg.data.address || '暂无具体地址'"></div>
                                             </div>
@@ -225,7 +221,6 @@
                                     <template x-if="msg.type === 'transfer'">
                                         <div class="wet-glass letter-card"
                                              :class="{
-                                                 'lite': messages.length - index > 20,
                                                  'state-received': msg.data.status === 'accepted',
                                                  'state-returned': msg.data.status === 'rejected'
                                              }">

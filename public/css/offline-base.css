@@ -140,11 +140,12 @@ body {
 }
 
 .nav-btn {
-    position: relative;
-    z-index: 0;
     height: 40px;
     padding: 0 16px;
     border-radius: 20px;
+    background: rgba(220, 220, 220, 0.7);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -155,30 +156,17 @@ body {
     font-weight: 600;
     color: #1a1a1a;
 }
-.nav-btn::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    pointer-events: none;
-    background: rgba(220, 220, 220, 0.7);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-}
-.nav-btn:active::before {
+.nav-btn:active {
     background: rgba(200, 200, 200, 0.8);
 }
 
 .theme-dark .nav-btn {
+    background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.25);
     color: #ffffff;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
-.theme-dark .nav-btn::before {
-    background: rgba(255, 255, 255, 0.12);
-}
-.theme-dark .nav-btn:active::before {
+.theme-dark .nav-btn:active {
     background: rgba(255, 255, 255, 0.2);
 }
 
@@ -239,6 +227,9 @@ body.multi-select-mode .nav-btn.icon-only {
     z-index: 10;
     width: 24px;
     height: 24px;
+    background: rgba(30, 30, 30, 0.8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border-radius: 50%;
     display: flex;
     justify-content: center;
@@ -247,17 +238,6 @@ body.multi-select-mode .nav-btn.icon-only {
     transform: translateX(-50%);
     bottom: -4px;
     border: 1px solid rgba(255, 255, 255, 0.2);
-}
-.center-heart::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    pointer-events: none;
-    background: rgba(30, 30, 30, 0.8);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
 }
 .center-heart svg {
     width: 10px;
@@ -445,16 +425,12 @@ body.mode-chapter .chapter-container {
     animation: physicalShake 0.3s ease-in-out;
 }
 .bubble.pressing {
+    background: rgba(255, 255, 255, 0.5);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
 }
-.bubble.pressing::before {
-    background: rgba(255, 255, 255, 0.5);
-}
 .theme-dark .bubble.pressing {
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.45) inset;
-}
-.theme-dark .bubble.pressing::before {
     background: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.45) inset;
 }
 
 @keyframes physicalShake {
