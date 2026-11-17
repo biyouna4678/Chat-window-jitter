@@ -202,26 +202,22 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .state-returned .status-text { color: rgba(255, 255, 255, 0.5); }
 
 /* ================= 5. PWA 全屏与兼容性解决方案（实战复盘标准版） ================= */
-/* 页面高度：用真实可见高度，避免 iOS 100vh 导致点击错位 */
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
+/* 1. 页面死锁，禁止整体滚动 */
+html {
     height: 100%;
     overflow: hidden;
-    overscroll-behavior: none;
-}
-
-html {
+    overscroll-behavior: none; /* 阻止整体页面橡皮筋回弹 */
     background-color: #1a1a1a; /* 最底层的兜底色 */
 }
 
 /* 2. 背景层铺满物理屏幕（不要在 body 加任何 padding） */
 body {
-    position: fixed;
-    inset: 0;
-    height: 100vh;
-    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh; /* 核心：绝对不要用 100dvh，确保铺满 Home Indicator 区域 */
+    overflow: hidden;
+    overscroll-behavior: none;
     background-image: var(--chat-wallpaper, url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg'));
     background-size: cover;
     background-position: center;

@@ -171,12 +171,12 @@ document.addEventListener('alpine:init', () => {
             const runWarm = () => {
                 const assets = [
                     './offline.html',
-                    './css/offline-base.css?v=27',
-                    './css/offline-components.css?v=27',
-                    './js/offline-data.js?v=27',
-                    './js/offline-chat.js?v=27',
-                    './js/offline-settings.js?v=27',
-                    './js/offline-app.js?v=27'
+                    './css/offline-base.css?v=28',
+                    './css/offline-components.css?v=28',
+                    './js/offline-data.js?v=28',
+                    './js/offline-chat.js?v=28',
+                    './js/offline-settings.js?v=28',
+                    './js/offline-app.js?v=28'
                 ];
                 assets.forEach(url => {
                     fetch(url, { credentials: 'same-origin' }).catch(() => {});

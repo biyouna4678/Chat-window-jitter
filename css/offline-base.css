@@ -56,26 +56,22 @@ textarea,
     display: none !important;
 }
 
-/* ================= iOS PWA 完美全屏锁死（真实可见高度防点击错位） ================= */
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
+/* ================= iOS PWA 完美全屏锁死（绝对不用 100dvh） ================= */
+html {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
-}
-
-html {
     background-color: #1a1a1a; /* 防白闪兜底色 */
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    position: fixed;
-    inset: 0;
-    height: 100vh;
-    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh; /* 核心：用 100vh 铺满到底部 Home Indicator，不用 100dvh */
+    overflow: hidden;
+    overscroll-behavior: none;
     display: flex;
     flex-direction: column;
     background-color: transparent;
@@ -85,9 +81,10 @@ body {
 
 .bg-layer {
     position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     background-image: url('../assets/images/offline-bg.jpg'), url('./assets/images/offline-bg.jpg'), url('/assets/images/offline-bg.jpg'), url('https://i.ibb.co/C3QwNp7x/IMG-9275.jpg');
     background-size: cover;
     background-position: center;
