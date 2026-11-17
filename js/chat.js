@@ -2,12 +2,17 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('chatApp', () => ({
         isMenuOpen: false,
         isDarkMode: false,
+        autoThemeByWallpaper: true,
+        hasCustomWallpaper: false,
+        isTransitioningOffline: false,
+        onlineToast: '',
+        onlineToastTimer: null,
         showCallSelector: false,
         messageText: '',
         showToolsPanel: false,
         currentPage: 0,
         touchStartX: 0,
-        
+
         showImagePreview: false,
         previewImageUrl: '',
 
@@ -43,24 +48,177 @@ document.addEventListener('alpine:init', () => {
         initChat() {
             const hasPresetDark = document.body.classList.contains('theme-dark') || document.documentElement.classList.contains('theme-dark');
             const prefersDark = Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
             if (window.ChatStorage) {
-                const stored = window.ChatStorage.load(window.ChatStorage.KEYS.THEME_DARK, null);
-                this.isDarkMode = stored !== null ? Boolean(stored) : (hasPresetDark || prefersDark);
-                window.ChatStorage.applyDarkMode(this.isDarkMode);
+                const savedBg = window.ChatStorage.load(window.ChatStorage.KEYS.ONLINE_WALLPAPER, null);
+                if (savedBg) {
+                    document.documentElement.style.setProperty('--chat-wallpaper', savedBg);
+                    this.hasCustomWallpaper = true;
+                }
+
+                this.autoThemeByWallpaper = window.ChatStorage.getThemeAuto();
+                if (this.autoThemeByWallpaper) {
+                    const cachedOnline = window.ChatStorage.load(window.ChatStorage.KEYS.ONLINE_THEME_DARK, null);
+                    this.isDarkMode = cachedOnline !== null ? Boolean(cachedOnline) : hasPresetDark;
+                    window.ChatStorage.applyDarkMode(this.isDarkMode, 'online');
+                    this.detectOnlineWallpaperTheme(false);
+                } else {
+                    const stored = window.ChatStorage.load(window.ChatStorage.KEYS.THEME_DARK, null);
+                    this.isDarkMode = stored !== null ? Boolean(stored) : (hasPresetDark || prefersDark);
+                    window.ChatStorage.applyDarkMode(this.isDarkMode, 'online');
+                }
             } else {
                 this.isDarkMode = hasPresetDark || prefersDark;
             }
+
             this.scrollToBottom();
+            this.warmOfflineAssets();
+        },
+
+        showOnlineToast(msg) {
+            this.onlineToast = msg;
+            clearTimeout(this.onlineToastTimer);
+            this.onlineToastTimer = setTimeout(() => {
+                this.onlineToast = '';
+            }, 2400);
+        },
+
+        detectOnlineWallpaperTheme(announce) {
+            if (!window.ChatStorage) return;
+            const savedBg = window.ChatStorage.load(window.ChatStorage.KEYS.ONLINE_WALLPAPER, null);
+            const fallbackUrls = savedBg
+                ? window.ChatStorage.extractUrlsFromBg(savedBg)
+                : ['./assets/images/bg.jpg', '/assets/images/bg.jpg', 'https://i.ibb.co/RTjD5DMN/IMG-9263.jpg'];
+
+            window.ChatStorage.detectBackgroundDarkness(document.body, fallbackUrls, (res) => {
+                if (res && res.isDark !== null && this.autoThemeByWallpaper) {
+                    this.isDarkMode = res.isDark;
+                    window.ChatStorage.applyDarkMode(this.isDarkMode, 'online');
+                    if (announce) {
+                        this.showOnlineToast(`已根据壁纸亮度自动适配${this.isDarkMode ? '深色' : '浅色'}玻璃`);
+                    }
+                }
+            });
         },
 
         toggleDarkMode() {
             this.isDarkMode = !this.isDarkMode;
+            this.autoThemeByWallpaper = false;
             if (window.ChatStorage) {
-                window.ChatStorage.setDarkMode(this.isDarkMode);
+                window.ChatStorage.setThemeAuto(false);
+                window.ChatStorage.setDarkMode(this.isDarkMode, 'online');
             } else {
                 document.body.classList.toggle('theme-dark', this.isDarkMode);
                 document.documentElement.classList.toggle('theme-dark', this.isDarkMode);
             }
+            this.showOnlineToast(`已手动切换为${this.isDarkMode ? '深色' : '浅色'}玻璃`);
+        },
+
+        toggleAutoTheme() {
+            this.autoThemeByWallpaper = !this.autoThemeByWallpaper;
+            if (window.ChatStorage) {
+                window.ChatStorage.setThemeAuto(this.autoThemeByWallpaper);
+            }
+            if (this.autoThemeByWallpaper) {
+                this.detectOnlineWallpaperTheme(true);
+            } else {
+                this.showOnlineToast('已关闭壁纸亮度自动识别');
+            }
+        },
+
+        openOnlineWallpaperPicker() {
+            const el = document.getElementById('online-wallpaper-picker');
+            if (el) el.click();
+        },
+
+        handleOnlineWallpaperUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            if (!window.ChatStorage) return;
+
+            window.ChatStorage.processWallpaperFile(file, ({ dataUrl, isDark }) => {
+                const bgVal = `url('${dataUrl}')`;
+                document.documentElement.style.setProperty('--chat-wallpaper', bgVal);
+                window.ChatStorage.save(window.ChatStorage.KEYS.ONLINE_WALLPAPER, bgVal);
+                this.hasCustomWallpaper = true;
+
+                // 更换壁纸后自动识别其亮度并切换玻璃质感
+                this.autoThemeByWallpaper = true;
+                window.ChatStorage.setThemeAuto(true);
+                if (isDark !== null) {
+                    this.isDarkMode = isDark;
+                    window.ChatStorage.applyDarkMode(this.isDarkMode, 'online');
+                    this.showOnlineToast(`壁纸已更新 · 自动识别为${this.isDarkMode ? '深色' : '浅色'}玻璃`);
+                } else {
+                    this.showOnlineToast('聊天壁纸已更新');
+                }
+            });
+            event.target.value = '';
+        },
+
+        resetOnlineWallpaper() {
+            if (!window.ChatStorage) return;
+            window.ChatStorage.remove(window.ChatStorage.KEYS.ONLINE_WALLPAPER);
+            document.documentElement.style.removeProperty('--chat-wallpaper');
+            this.hasCustomWallpaper = false;
+            this.autoThemeByWallpaper = true;
+            window.ChatStorage.setThemeAuto(true);
+            this.detectOnlineWallpaperTheme(false);
+            this.showOnlineToast('已恢复默认壁纸并自动适配');
+        },
+
+        warmOfflineAssets() {
+            const runWarm = () => {
+                const assets = [
+                    './offline.html',
+                    './css/offline-base.css?v=24',
+                    './css/offline-components.css?v=24',
+                    './js/offline-data.js?v=24',
+                    './js/offline-chat.js?v=24',
+                    './js/offline-settings.js?v=24',
+                    './js/offline-app.js?v=24'
+                ];
+                assets.forEach(url => {
+                    fetch(url, { credentials: 'same-origin' }).catch(() => {});
+                });
+
+                // 预解码线下模式壁纸，消除跳转后首次渲染大图解码卡顿
+                let offlineWallUrl = './assets/images/offline-bg.jpg';
+                if (window.ChatStorage) {
+                    const savedOfflineBg = window.ChatStorage.load(window.ChatStorage.KEYS.OFFLINE_WALLPAPER, null);
+                    const extracted = window.ChatStorage.extractUrlsFromBg(savedOfflineBg);
+                    if (extracted.length > 0) offlineWallUrl = extracted[0];
+                }
+                const preloadImg = new Image();
+                preloadImg.src = offlineWallUrl;
+                if (typeof preloadImg.decode === 'function') {
+                    preloadImg.decode().catch(() => {});
+                }
+            };
+
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(runWarm, { timeout: 1500 });
+            } else {
+                setTimeout(runWarm, 600);
+            }
+        },
+
+        enterOfflineMode() {
+            if (this.isTransitioningOffline) return;
+            // 关键优化：不收起 showToolsPanel，防止输入框与布局发生跳变和重排
+            this.isTransitioningOffline = true;
+
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    if (window.ChatStorage) {
+                        window.ChatStorage.syncOnlineContext(this.messages);
+                    }
+                    try {
+                        sessionStorage.setItem('chatwindow_nav_from', 'online');
+                    } catch (_) {}
+                    window.location.assign('./offline.html');
+                }, 180);
+            });
         },
 
         addSystemMessage(text) {
@@ -75,67 +233,64 @@ document.addEventListener('alpine:init', () => {
             this.scrollToBottom();
         },
 
-        hasText() { 
-            return this.messageText.trim().length > 0; 
+        hasText() {
+            return this.messageText.trim().length > 0;
         },
 
-        handleTouchStart(e) { 
-            this.touchStartX = e.changedTouches[0].screenX; 
+        handleTouchStart(e) {
+            this.touchStartX = e.changedTouches[0].screenX;
         },
-        
+
         handleTouchEnd(e) {
             let touchEndX = e.changedTouches[0].screenX;
             if (this.touchStartX - touchEndX > 50 && this.currentPage === 0) { this.currentPage = 1; }
             else if (touchEndX - this.touchStartX > 50 && this.currentPage === 1) { this.currentPage = 0; }
         },
 
-        // 【新增】统一处理工具栏点击逻辑，替代 HTML 里的又长又臭的 if else
         handleToolClick(item) {
-            this.showToolsPanel = false; // 点击任何按钮后，默认先关闭面板
-            
+            if (item.name === '线下模式') {
+                this.enterOfflineMode();
+                return;
+            }
+
+            this.showToolsPanel = false;
+
             switch (item.name) {
-                case '图片': 
-                    this.openFilePicker(); 
+                case '图片':
+                    this.openFilePicker();
                     break;
-                case '拍摄': 
-                    this.openCamera(); 
+                case '拍摄':
+                    this.openCamera();
                     break;
-                case '语音通话': 
-                    this.startCall('voice', 'calling'); 
+                case '语音通话':
+                    this.startCall('voice', 'calling');
                     break;
-                case '视频通话': 
-                    this.startCall('video', 'calling'); 
+                case '视频通话':
+                    this.startCall('video', 'calling');
                     break;
-                case '位置': 
-                    this.showLocationModal = true; 
+                case '位置':
+                    this.showLocationModal = true;
                     break;
-                case '转账': 
-                    this.isTransferModalOpen = true; 
-                    break;
-                case '线下模式':
-                    if (window.ChatStorage) {
-                        window.ChatStorage.syncOnlineContext(this.messages);
-                    }
-                    window.location.href = './offline.html';
+                case '转账':
+                    this.isTransferModalOpen = true;
                     break;
                 default:
-                    // 其他未开发功能可以在此处统一拦截
                     console.log('点击了待开发功能:', item.name);
             }
         },
 
-        openFilePicker() { 
-            document.getElementById('native-file-picker').click(); 
+        openFilePicker() {
+            document.getElementById('native-file-picker').click();
         },
-        
-        openCamera() { 
-            document.getElementById('native-camera-picker').click(); 
+
+        openCamera() {
+            document.getElementById('native-camera-picker').click();
         },
 
         scrollToBottom() {
             this.$nextTick(() => {
                 const c = document.getElementById('chat-scroll');
-                if(c) c.scrollTop = c.scrollHeight;
+                if (c) c.scrollTop = c.scrollHeight;
             });
         },
 
@@ -143,7 +298,7 @@ document.addEventListener('alpine:init', () => {
             if (!this.messageText.trim()) return;
             const now = new Date();
             const timeStr = `今天 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            
+
             this.messages.push({
                 id: Date.now(),
                 type: 'text',
@@ -151,7 +306,7 @@ document.addEventListener('alpine:init', () => {
                 text: this.messageText.trim(),
                 time: timeStr
             });
-            
+
             this.messageText = '';
             this.scrollToBottom();
         },
@@ -173,7 +328,7 @@ document.addEventListener('alpine:init', () => {
                 this.scrollToBottom();
             };
             reader.readAsDataURL(file);
-            event.target.value = ''; // 清空以允许重复选同一张图
+            event.target.value = '';
         },
 
         saveImage(url) {

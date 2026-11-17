@@ -37,6 +37,7 @@
 
             /* ============ 美化配置 ============ */
             isDarkMode: false,
+            autoThemeByWallpaper: true,
             statusText: 'Night reveals stars the daylight cannot show.',
             customCss: '',
             statusBarCss: '',
@@ -159,18 +160,27 @@
                     });
                 }
 
-                // 恢复并同步深浅色模式
-                const hasPresetDark = document.body.classList.contains('theme-dark') || document.documentElement.classList.contains('theme-dark');
-                const prefersDark = Boolean(global.matchMedia && global.matchMedia('(prefers-color-scheme: dark)').matches);
-                const storedDark = global.ChatStorage.load(global.ChatStorage.KEYS.THEME_DARK, null);
-                this.isDarkMode = storedDark !== null ? Boolean(storedDark) : (hasPresetDark || prefersDark);
-                global.ChatStorage.applyDarkMode(this.isDarkMode);
-
-                // 恢复自定义壁纸
+                // 恢复自定义壁纸（先于亮度识别恢复，确保采样目标正确）
                 const savedBg = global.ChatStorage.load(global.ChatStorage.KEYS.OFFLINE_WALLPAPER, null);
                 if (savedBg) {
                     const layer = document.querySelector('.bg-layer');
                     if (layer) layer.style.backgroundImage = savedBg;
+                }
+
+                // 恢复并同步深浅色模式（支持壁纸亮度自动识别）
+                const hasPresetDark = document.body.classList.contains('theme-dark') || document.documentElement.classList.contains('theme-dark');
+                const prefersDark = Boolean(global.matchMedia && global.matchMedia('(prefers-color-scheme: dark)').matches);
+                this.autoThemeByWallpaper = global.ChatStorage.getThemeAuto();
+
+                if (this.autoThemeByWallpaper) {
+                    const cachedOffline = global.ChatStorage.load(global.ChatStorage.KEYS.OFFLINE_THEME_DARK, null);
+                    this.isDarkMode = cachedOffline !== null ? Boolean(cachedOffline) : hasPresetDark;
+                    global.ChatStorage.applyDarkMode(this.isDarkMode, 'offline');
+                    this.detectOfflineWallpaperTheme(false);
+                } else {
+                    const storedDark = global.ChatStorage.load(global.ChatStorage.KEYS.THEME_DARK, null);
+                    this.isDarkMode = storedDark !== null ? Boolean(storedDark) : (hasPresetDark || prefersDark);
+                    global.ChatStorage.applyDarkMode(this.isDarkMode, 'offline');
                 }
 
                 // 恢复自定义字体
@@ -184,14 +194,48 @@
                 this.applyStatusBarCSS();
             },
 
+            detectOfflineWallpaperTheme(announce) {
+                if (!global.ChatStorage) return;
+                const layer = document.querySelector('.bg-layer');
+                const savedBg = global.ChatStorage.load(global.ChatStorage.KEYS.OFFLINE_WALLPAPER, null);
+                const fallbackUrls = savedBg
+                    ? global.ChatStorage.extractUrlsFromBg(savedBg)
+                    : ['./assets/images/offline-bg.jpg', '/assets/images/offline-bg.jpg', 'https://i.ibb.co/C3QwNp7x/IMG-9275.jpg'];
+
+                global.ChatStorage.detectBackgroundDarkness(layer, fallbackUrls, (res) => {
+                    if (res && res.isDark !== null && this.autoThemeByWallpaper) {
+                        this.isDarkMode = res.isDark;
+                        global.ChatStorage.applyDarkMode(this.isDarkMode, 'offline');
+                        if (announce) {
+                            this.showToast(`已根据壁纸亮度自动适配${this.isDarkMode ? '深色' : '浅色'}玻璃`);
+                        }
+                    }
+                });
+            },
+
+            toggleAutoTheme() {
+                this.autoThemeByWallpaper = !this.autoThemeByWallpaper;
+                if (global.ChatStorage) {
+                    global.ChatStorage.setThemeAuto(this.autoThemeByWallpaper);
+                }
+                if (this.autoThemeByWallpaper) {
+                    this.detectOfflineWallpaperTheme(true);
+                } else {
+                    this.showToast('已关闭壁纸亮度自动识别');
+                }
+            },
+
             toggleDarkMode() {
                 this.isDarkMode = !this.isDarkMode;
+                this.autoThemeByWallpaper = false;
                 if (global.ChatStorage) {
-                    global.ChatStorage.setDarkMode(this.isDarkMode);
+                    global.ChatStorage.setThemeAuto(false);
+                    global.ChatStorage.setDarkMode(this.isDarkMode, 'offline');
                 } else {
                     document.body.classList.toggle('theme-dark', this.isDarkMode);
                     document.documentElement.classList.toggle('theme-dark', this.isDarkMode);
                 }
+                this.showToast(`已手动切换为${this.isDarkMode ? '深色' : '浅色'}玻璃`);
             },
 
             /* ============ 世界书三态切换 ============ */
@@ -463,6 +507,9 @@
                             if (global.ChatStorage) {
                                 global.ChatStorage.save(global.ChatStorage.KEYS.OFFLINE_WALLPAPER, data.background);
                             }
+                            if (this.autoThemeByWallpaper) {
+                                this.detectOfflineWallpaperTheme(false);
+                            }
                         }
                         if (data.statusText !== undefined) this.statusText = data.statusText;
                         this.persistSettings();
@@ -479,17 +526,33 @@
             changeWallpaper(event) {
                 const file = event.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const bgVal = `url('${e.target.result}')`;
-                        const layer = document.querySelector('.bg-layer');
-                        if (layer) layer.style.backgroundImage = bgVal;
-                        if (global.ChatStorage) {
+                    if (global.ChatStorage && typeof global.ChatStorage.processWallpaperFile === 'function') {
+                        global.ChatStorage.processWallpaperFile(file, ({ dataUrl, isDark }) => {
+                            const bgVal = `url('${dataUrl}')`;
+                            const layer = document.querySelector('.bg-layer');
+                            if (layer) layer.style.backgroundImage = bgVal;
                             global.ChatStorage.save(global.ChatStorage.KEYS.OFFLINE_WALLPAPER, bgVal);
-                        }
-                        this.showToast('壁纸替换成功');
-                    };
-                    reader.readAsDataURL(file);
+
+                            this.autoThemeByWallpaper = true;
+                            global.ChatStorage.setThemeAuto(true);
+                            if (isDark !== null) {
+                                this.isDarkMode = isDark;
+                                global.ChatStorage.applyDarkMode(this.isDarkMode, 'offline');
+                                this.showToast(`壁纸已替换 · 自动识别为${this.isDarkMode ? '深色' : '浅色'}玻璃`);
+                            } else {
+                                this.showToast('壁纸替换成功');
+                            }
+                        });
+                    } else {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const bgVal = `url('${e.target.result}')`;
+                            const layer = document.querySelector('.bg-layer');
+                            if (layer) layer.style.backgroundImage = bgVal;
+                            this.showToast('壁纸替换成功');
+                        };
+                        reader.readAsDataURL(file);
+                    }
                 }
                 event.target.value = '';
             }

@@ -11,19 +11,45 @@
     <link rel="manifest" href="./manifest.json">
 
     <title>液态玻璃通讯</title>
+    <link rel="prefetch" href="./offline.html">
+    <script>
+      (function () {
+        try {
+          var bg = localStorage.getItem('chatwindow_v1_online_wallpaper');
+          if (bg) {
+            document.documentElement.style.setProperty('--chat-wallpaper', JSON.parse(bg));
+          }
+          var autoRaw = localStorage.getItem('chatwindow_v1_theme_auto');
+          var isAuto = autoRaw === null ? true : JSON.parse(autoRaw);
+          var darkRaw = isAuto
+            ? localStorage.getItem('chatwindow_v1_online_theme_dark')
+            : localStorage.getItem('chatwindow_v1_theme_dark');
+          if (darkRaw !== null && JSON.parse(darkRaw)) {
+            document.documentElement.classList.add('theme-dark');
+          }
+          if (sessionStorage.getItem('chatwindow_nav_from') === 'offline') {
+            sessionStorage.removeItem('chatwindow_nav_from');
+            document.documentElement.classList.add('pwa-nav-entering');
+            setTimeout(function () {
+              document.documentElement.classList.remove('pwa-nav-entering');
+            }, 340);
+          }
+        } catch (_) {}
+      })();
+    </script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="./css/style.css?v=23">
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=23">
-    <script src="./js/storage.js?v=23"></script>
-    <script src="./js/chat.js?v=23"></script>
-    <script src="./js/call.js?v=23"></script>
-    <script src="./js/map.js?v=23"></script>
-    <script src="./js/transfer.js?v=23"></script>
+    <link rel="stylesheet" href="./css/style.css?v=24">
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=24">
+    <script src="./js/storage.js?v=24"></script>
+    <script src="./js/chat.js?v=24"></script>
+    <script src="./js/call.js?v=24"></script>
+    <script src="./js/map.js?v=24"></script>
+    <script src="./js/transfer.js?v=24"></script>
 </head>
 <body class="font-sans antialiased overflow-hidden">
 
@@ -35,10 +61,22 @@
 
         <input type="file" id="native-file-picker" accept="image/*" class="hidden" @change="handleImageUpload($event)">
         <input type="file" id="native-camera-picker" accept="image/*" capture="environment" class="hidden" @change="handleImageUpload($event)">
+        <input type="file" id="online-wallpaper-picker" accept="image/*" class="hidden" @change="handleOnlineWallpaperUpload($event)">
+
+        <!-- 轻提示气泡 -->
+        <div x-show="onlineToast" x-transition.opacity class="wet-glass online-toast text-header" style="display: none;" x-text="onlineToast"></div>
+
+        <!-- 线下模式无缝转场遮罩 -->
+        <div x-show="isTransitioningOffline"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             class="page-transition-curtain"
+             style="display: none;"></div>
 
         <!-- ================= 1. 聊天主界面 ================= -->
-        <div class="w-full h-full flex flex-col relative transition-all duration-300"
-             :class="callState !== 'idle' && !isMinimized ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'">
+        <div class="w-full h-full flex flex-col relative transition-[transform,opacity] duration-200 ease-out transform-gpu"
+             :class="(callState !== 'idle' && !isMinimized) || isTransitioningOffline ? 'opacity-0 scale-[0.97] pointer-events-none' : 'opacity-100 scale-100'">
             
             <!-- 顶部磨砂渐隐层（遮挡滚动内容） -->
             <div class="absolute top-0 left-0 w-full h-[100px] glass-fade-top pointer-events-none z-20"></div>
@@ -85,7 +123,19 @@
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><circle cx="4.5" cy="5" r="2.5" /><rect x="10" y="3" width="13" height="4" rx="2" /><circle cx="4.5" cy="12" r="2.5" /><rect x="10" y="10" width="13" height="4" rx="2" /><circle cx="4.5" cy="19" r="2.5" /><rect x="10" y="17" width="13" height="4" rx="2" /></svg>
                         </button>
                         <div x-show="isMenuOpen" @click="isMenuOpen = false" class="fixed inset-0 z-[90] bg-transparent"></div>
-                        <div x-show="isMenuOpen" class="wet-glass absolute right-0 top-14 w-[160px] rounded-[20px] overflow-hidden z-[100] pointer-events-auto" style="display: none;">
+                        <div x-show="isMenuOpen" class="wet-glass absolute right-0 top-14 w-[196px] rounded-[20px] overflow-hidden z-[100] pointer-events-auto" style="display: none;">
+                            <button type="button" @click.stop="openOnlineWallpaperPicker(); isMenuOpen = false" class="w-full text-left flex items-center justify-between px-4 py-3.5 border-b border-white/20 active:bg-white/20 cursor-pointer text-header text-[14px] font-medium">
+                                <span>上传聊天壁纸</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 opacity-80"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+                            </button>
+                            <button type="button" x-show="hasCustomWallpaper" @click.stop="resetOnlineWallpaper(); isMenuOpen = false" class="w-full text-left flex items-center justify-between px-4 py-3.5 border-b border-white/20 active:bg-white/20 cursor-pointer text-header text-[14px] font-medium">
+                                <span>恢复默认壁纸</span>
+                                <span class="text-xs opacity-75">↺</span>
+                            </button>
+                            <button type="button" @click.stop="toggleAutoTheme(); isMenuOpen = false" class="w-full text-left flex items-center justify-between px-4 py-3.5 border-b border-white/20 active:bg-white/20 cursor-pointer text-header text-[14px] font-medium">
+                                <span>壁纸亮度自适应</span>
+                                <span class="text-[11px] px-1.5 py-0.5 rounded-md bg-white/20" x-text="autoThemeByWallpaper ? '开启' : '关闭'"></span>
+                            </button>
                             <button type="button" @click.stop="toggleDarkMode(); isMenuOpen = false" class="w-full text-left flex items-center justify-between px-4 py-3.5 border-b border-white/20 active:bg-white/20 cursor-pointer text-header text-[14px] font-medium">
                                 <span x-text="isDarkMode ? '切换浅色模式' : '切换深色模式'"></span>
                                 <span class="text-xs opacity-80" x-text="isDarkMode ? '☀' : '☾'"></span>

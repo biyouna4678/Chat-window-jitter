@@ -11,22 +11,44 @@
     <link rel="manifest" href="./manifest.json">
 
     <title>线下剧场 - 液态玻璃通讯</title>
+    <link rel="prefetch" href="./index.html">
+    <script>
+      (function () {
+        try {
+          var autoRaw = localStorage.getItem('chatwindow_v1_theme_auto');
+          var isAuto = autoRaw === null ? true : JSON.parse(autoRaw);
+          var darkRaw = isAuto
+            ? localStorage.getItem('chatwindow_v1_offline_theme_dark')
+            : localStorage.getItem('chatwindow_v1_theme_dark');
+          if (darkRaw !== null && JSON.parse(darkRaw)) {
+            document.documentElement.classList.add('theme-dark');
+          }
+          if (sessionStorage.getItem('chatwindow_nav_from') === 'online') {
+            sessionStorage.removeItem('chatwindow_nav_from');
+            document.documentElement.classList.add('pwa-nav-entering');
+            setTimeout(function () {
+              document.documentElement.classList.remove('pwa-nav-entering');
+            }, 340);
+          }
+        } catch (_) {}
+      })();
+    </script>
 
-    <link rel="stylesheet" href="./css/offline-base.css?v=3">
-    <link rel="stylesheet" href="./css/offline-components.css?v=3">
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=3">
+    <link rel="stylesheet" href="./css/offline-base.css?v=24">
+    <link rel="stylesheet" href="./css/offline-components.css?v=24">
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=24">
     <style id="user-custom-css"></style>
     <style id="user-statusbar-css"></style>
 
     <!-- 共享存储与线下模块化脚本 -->
-    <script src="./js/storage.js?v=3"></script>
-    <script src="./js/offline-data.js?v=3"></script>
-    <script src="./js/offline-chat.js?v=3"></script>
-    <script src="./js/offline-settings.js?v=3"></script>
-    <script src="./js/offline-app.js?v=3"></script>
+    <script src="./js/storage.js?v=24"></script>
+    <script src="./js/offline-data.js?v=24"></script>
+    <script src="./js/offline-chat.js?v=24"></script>
+    <script src="./js/offline-settings.js?v=24"></script>
+    <script src="./js/offline-app.js?v=24"></script>
 
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <!-- Alpine.js (与线上页同版本 CDN 以复用缓存) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body
     x-data="offlineApp()"
@@ -34,8 +56,9 @@
     :class="{ 'mode-chapter': currentMode === 'chapter', 'multi-select-mode': isMultiSelectMode, 'theme-dark': isDarkMode }"
 >
     <div class="bg-layer" aria-hidden="true"></div>
+    <div class="page-transition-curtain" x-show="isLeavingOffline" x-cloak style="transition: opacity 0.2s ease-out;"></div>
 
-    <div class="main-container">
+    <div class="main-container" :class="{ 'is-leaving': isLeavingOffline }">
         <div class="glass-fade-top offline-fade-top" aria-hidden="true"></div>
 
         <header class="top-header">
@@ -422,6 +445,13 @@
             <!-- 面板 2：美化 -->
             <div class="panel" :class="{ active: activeTab === 'beauty' }">
                 <div class="settings-group">
+                    <div class="settings-item">
+                        <div>
+                            <div style="font-size: 15px;">壁纸亮度自动识别</div>
+                            <div style="font-size: 11px; color: #888; margin-top: 2px;">根据壁纸明暗自动切换深浅液态玻璃质感</div>
+                        </div>
+                        <div class="ios-switch" :class="{ on: autoThemeByWallpaper }" @click="toggleAutoTheme()"></div>
+                    </div>
                     <div class="settings-item">
                         <div>
                             <div style="font-size: 15px;">深色液态玻璃模式</div>

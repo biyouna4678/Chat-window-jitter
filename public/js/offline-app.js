@@ -23,6 +23,9 @@
                     this.restoreSettings();
                     this.restoreMessages();
                     this.scrollToBottom();
+                    if (typeof this.warmOnlineAssets === 'function') {
+                        this.warmOnlineAssets();
+                    }
 
                     // 2. 自动持久化核心状态变化
                     this.$watch('statusText', () => this.persistSettings());

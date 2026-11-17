@@ -161,3 +161,52 @@
     color: #e5e7eb;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
+
+/* --------------------------------------------------------
+   7. 页面无缝切换动效与轻提示 (GPU 合成，零布局抖动)
+   -------------------------------------------------------- */
+.page-transition-curtain {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(242, 244, 248, 0.72);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(22px) saturate(140%);
+    transform: translateZ(0);
+    will-change: opacity;
+}
+.theme-dark .page-transition-curtain {
+    background: rgba(18, 18, 20, 0.78);
+}
+
+@keyframes pwaPageEnter {
+    0% {
+        opacity: 0;
+        transform: scale(1.018) translateZ(0);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateZ(0);
+    }
+}
+
+html.pwa-nav-entering .pwa-root,
+html.pwa-nav-entering .main-container {
+    animation: pwaPageEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    will-change: opacity, transform;
+}
+
+.online-toast {
+    position: fixed;
+    top: max(76px, calc(env(safe-area-inset-top, 12px) + 64px));
+    left: 50%;
+    transform: translateX(-50%) translateZ(0);
+    z-index: 950;
+    padding: 8px 18px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+}
+

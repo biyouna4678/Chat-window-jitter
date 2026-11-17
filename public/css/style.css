@@ -218,7 +218,7 @@ body {
     height: 100vh; /* 核心：绝对不要用 100dvh */
     overflow: hidden;
     overscroll-behavior: none;
-    background-image: url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg');
+    background-image: var(--chat-wallpaper, url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg'));
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -280,5 +280,9 @@ body {
     width: 100%;
     max-width: 480px;
     box-shadow: 0 0 40px rgba(0,0,0,0.15);
+    background-image: var(--chat-wallpaper, url('../assets/images/bg.jpg'), url('./assets/images/bg.jpg'), url('/assets/images/bg.jpg'), url('https://i.ibb.co/RTjD5DMN/IMG-9263.jpg'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 }

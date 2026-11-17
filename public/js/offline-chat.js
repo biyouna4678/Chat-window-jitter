@@ -47,6 +47,7 @@
             /* ============ Toast ============ */
             toastMessage: '',
             toastTimer: null,
+            isLeavingOffline: false,
 
             /* ============ 计算属性 (保留 getter 响应式) ============ */
             get currentMessages() {
@@ -64,16 +65,60 @@
             },
 
             /* ============ 跨页面返回线上 ============ */
-            goBackToOnline() {
-                this.persistMessages();
-                if (global.ChatStorage) {
-                    global.ChatStorage.syncOfflineContext(
-                        this.currentMode,
-                        this.currentMessages,
-                        this.memorySync
-                    );
+            warmOnlineAssets() {
+                const runWarm = () => {
+                    const assets = [
+                        './index.html',
+                        './css/style.css?v=24',
+                        './js/chat.js?v=24',
+                        './js/call.js?v=24',
+                        './js/map.js?v=24',
+                        './js/transfer.js?v=24'
+                    ];
+                    assets.forEach(url => {
+                        fetch(url, { credentials: 'same-origin' }).catch(() => {});
+                    });
+
+                    let onlineWallUrl = './assets/images/bg.jpg';
+                    if (global.ChatStorage) {
+                        const savedOnlineBg = global.ChatStorage.load(global.ChatStorage.KEYS.ONLINE_WALLPAPER, null);
+                        const extracted = global.ChatStorage.extractUrlsFromBg(savedOnlineBg);
+                        if (extracted.length > 0) onlineWallUrl = extracted[0];
+                    }
+                    const preloadImg = new Image();
+                    preloadImg.src = onlineWallUrl;
+                    if (typeof preloadImg.decode === 'function') {
+                        preloadImg.decode().catch(() => {});
+                    }
+                };
+
+                if ('requestIdleCallback' in global) {
+                    global.requestIdleCallback(runWarm, { timeout: 1500 });
+                } else {
+                    setTimeout(runWarm, 600);
                 }
-                window.location.href = './index.html';
+            },
+
+            goBackToOnline() {
+                if (this.isLeavingOffline) return;
+                this.isLeavingOffline = true;
+
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        this.persistMessages();
+                        if (global.ChatStorage) {
+                            global.ChatStorage.syncOfflineContext(
+                                this.currentMode,
+                                this.currentMessages,
+                                this.memorySync
+                            );
+                        }
+                        try {
+                            sessionStorage.setItem('chatwindow_nav_from', 'offline');
+                        } catch (_) {}
+                        window.location.assign('./index.html');
+                    }, 180);
+                });
             },
 
             /* ============ 持久化消息 ============ */
