@@ -7,7 +7,7 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#1a1a1a">
+    <meta name="theme-color" content="#eeeff0">
     <link rel="manifest" href="./manifest.json">
 
     <title>液态玻璃通讯</title>
@@ -43,14 +43,14 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="./css/style.css?v=30">
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=30">
-    <script src="./js/storage.js?v=30"></script>
-    <script src="./js/chat.js?v=30"></script>
-    <script src="./js/call.js?v=30"></script>
-    <script src="./js/map.js?v=30"></script>
-    <script src="./js/transfer.js?v=30"></script>
-    <script defer src="./js/jelly.js?v=30"></script>
+    <link rel="stylesheet" href="./css/style.css?v=31">
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=31">
+    <script src="./js/storage.js?v=31"></script>
+    <script src="./js/chat.js?v=31"></script>
+    <script src="./js/call.js?v=31"></script>
+    <script src="./js/map.js?v=31"></script>
+    <script src="./js/transfer.js?v=31"></script>
+    <script defer src="./js/jelly.js?v=31"></script>
 </head>
 <body class="font-sans antialiased overflow-hidden">
 
@@ -288,7 +288,7 @@
                         <!-- 顶部拖拽条：半透明白，浅色/深色都可见 -->
                         <div class="w-10 h-1.5 bg-white/60 rounded-full mx-auto mt-4 mb-2 shrink-0"></div>
                         <!-- 图标容器 -->
-                        <div class="flex-1 relative px-4 pt-2">
+                        <div class="flex-1 relative px-4 pt-7">
                             <div x-show="currentPage === 0" class="grid grid-cols-4 gap-y-4 gap-x-2 w-full">
                                 <template x-for="(item, index) in page1" :key="index">
                                     <div class="flex flex-col items-center gap-1.5 cursor-pointer" @click="handleToolClick(item)">
@@ -311,7 +311,7 @@
                             </div>
                         </div>
                         <!-- 分页点：半透明白 -->
-                        <div class="flex items-center justify-center pb-6 pt-2 shrink-0">
+                        <div class="flex items-center justify-center pb-5 pt-2 shrink-0">
                             <div class="flex items-center gap-2">
                                 <button type="button" @click="currentPage = 0" :class="currentPage === 0 ? 'bg-white/80' : 'bg-white/35'" class="w-2 h-2 rounded-full transition-colors"></button>
                                 <button type="button" @click="currentPage = 1" :class="currentPage === 1 ? 'bg-white/80' : 'bg-white/35'" class="w-2 h-2 rounded-full transition-colors"></button>
