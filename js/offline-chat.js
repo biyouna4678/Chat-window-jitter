@@ -69,12 +69,12 @@
                 const runWarm = () => {
                     const assets = [
                         './index.html',
-                        './css/style.css?v=28',
-                        './js/chat.js?v=28',
-                        './js/call.js?v=28',
-                        './js/map.js?v=28',
-                        './js/transfer.js?v=28',
-                        './js/jelly.js?v=28'
+                        './css/style.css?v=29',
+                        './js/chat.js?v=29',
+                        './js/call.js?v=29',
+                        './js/map.js?v=29',
+                        './js/transfer.js?v=29',
+                        './js/jelly.js?v=29'
                     ];
                     assets.forEach(url => {
                         fetch(url, { credentials: 'same-origin' }).catch(() => {});
@@ -100,25 +100,85 @@
                 }
             },
 
+            initKeyboardViewportFix() {
+                const mainEl = document.querySelector('.main-container');
+                if (!mainEl) return;
+
+                const syncViewport = () => {
+                    const isDesktop = global.matchMedia && global.matchMedia('(hover: hover) and (min-width: 600px)').matches;
+                    if (isDesktop || !global.visualViewport) {
+                        mainEl.classList.remove('keyboard-open');
+                        mainEl.style.top = '';
+                        mainEl.style.height = '';
+                        return;
+                    }
+
+                    const vv = global.visualViewport;
+                    const keyboardHeight = global.innerHeight - vv.height;
+
+                    if (keyboardHeight > 100) {
+                        if (global.scrollY !== 0 || global.scrollX !== 0) {
+                            global.scrollTo(0, 0);
+                        }
+                        mainEl.classList.add('keyboard-open');
+                        mainEl.style.top = `${Math.max(0, Math.floor(vv.offsetTop))}px`;
+                        mainEl.style.height = `${Math.ceil(vv.height)}px`;
+                        this.scrollToBottom();
+                    } else {
+                        mainEl.classList.remove('keyboard-open');
+                        mainEl.style.top = '';
+                        mainEl.style.height = '';
+                        if (global.scrollY !== 0 || global.scrollX !== 0) {
+                            global.scrollTo(0, 0);
+                        }
+                    }
+                };
+
+                if (global.visualViewport) {
+                    global.visualViewport.addEventListener('resize', syncViewport);
+                    global.visualViewport.addEventListener('scroll', syncViewport);
+                }
+                global.addEventListener('scroll', () => {
+                    if (global.scrollY !== 0 || global.scrollX !== 0) {
+                        global.scrollTo(0, 0);
+                    }
+                }, { passive: true });
+                mainEl.addEventListener('focusin', () => {
+                    requestAnimationFrame(syncViewport);
+                    setTimeout(syncViewport, 80);
+                    setTimeout(syncViewport, 280);
+                });
+                mainEl.addEventListener('focusout', () => {
+                    setTimeout(syncViewport, 60);
+                    setTimeout(syncViewport, 260);
+                });
+            },
+
             goBackToOnline() {
                 if (this.isLeavingOffline) return;
+                const activeEl = document.activeElement;
+                if (activeEl && typeof activeEl.blur === 'function' && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
+                    activeEl.blur();
+                }
                 this.isLeavingOffline = true;
 
                 requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        this.persistMessages();
-                        if (global.ChatStorage) {
-                            global.ChatStorage.syncOfflineContext(
-                                this.currentMode,
-                                this.currentMessages,
-                                this.memorySync
-                            );
-                        }
-                        try {
-                            sessionStorage.setItem('chatwindow_nav_from', 'offline');
-                        } catch (_) {}
-                        window.location.assign('./index.html');
-                    }, 180);
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                            this.persistMessages();
+                            if (global.ChatStorage) {
+                                global.ChatStorage.syncOfflineContext(
+                                    this.currentMode,
+                                    this.currentMessages,
+                                    this.memorySync
+                                );
+                            }
+                            try {
+                                sessionStorage.setItem('chatwindow_nav_from', 'offline');
+                            } catch (_) {}
+                            window.location.assign('./index.html');
+                        }, 260);
+                    });
                 });
             },
 

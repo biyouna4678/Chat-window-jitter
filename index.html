@@ -43,14 +43,14 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;900&family=Playfair+Display:ital,wght@1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="./css/style.css?v=28">
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=28">
-    <script src="./js/storage.js?v=28"></script>
-    <script src="./js/chat.js?v=28"></script>
-    <script src="./js/call.js?v=28"></script>
-    <script src="./js/map.js?v=28"></script>
-    <script src="./js/transfer.js?v=28"></script>
-    <script defer src="./js/jelly.js?v=28"></script>
+    <link rel="stylesheet" href="./css/style.css?v=29">
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=29">
+    <script src="./js/storage.js?v=29"></script>
+    <script src="./js/chat.js?v=29"></script>
+    <script src="./js/call.js?v=29"></script>
+    <script src="./js/map.js?v=29"></script>
+    <script src="./js/transfer.js?v=29"></script>
+    <script defer src="./js/jelly.js?v=29"></script>
 </head>
 <body class="font-sans antialiased overflow-hidden">
 
@@ -67,17 +67,13 @@
         <!-- 轻提示气泡 -->
         <div x-show="onlineToast" x-transition.opacity class="wet-glass online-toast text-header" style="display: none;" x-text="onlineToast"></div>
 
-        <!-- 线下模式无缝转场遮罩 -->
-        <div x-show="isTransitioningOffline"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             class="page-transition-curtain"
-             style="display: none;"></div>
+        <!-- 线下模式无缝转场遮罩（常驻 DOM，CSS 关键帧强制合成 backdrop-filter，杜绝 WebKit 偶发跳帧） -->
+        <div class="page-transition-curtain" :class="{ 'is-active': isTransitioningOffline }" aria-hidden="true"></div>
+        <div class="page-enter-curtain" aria-hidden="true"></div>
 
         <!-- ================= 1. 聊天主界面 ================= -->
         <div class="w-full h-full flex flex-col relative transition-[transform,opacity] duration-200 ease-out"
-             :class="(callState !== 'idle' && !isMinimized) || isTransitioningOffline ? 'opacity-0 scale-[0.97] pointer-events-none' : 'opacity-100'">
+             :class="[(callState !== 'idle' && !isMinimized) ? 'opacity-0 scale-[0.97] pointer-events-none' : 'opacity-100', isTransitioningOffline ? 'pointer-events-none' : '']">
             
             <!-- 顶部磨砂渐隐层（遮挡滚动内容） -->
             <div class="absolute top-0 left-0 w-full h-[100px] glass-fade-top pointer-events-none z-20"></div>
@@ -249,26 +245,26 @@
                 <div class="absolute bottom-0 left-0 w-full h-[120px] glass-fade-bottom pointer-events-none z-[-1]"></div>
 
                 <!-- 输入框本体 -->
-                <div class="px-4" :class="showToolsPanel ? 'pb-3' : 'pb-[calc(1rem+env(safe-area-inset-bottom))]'">
+                <div class="px-4 chat-input-dock" :class="showToolsPanel ? 'pb-3' : 'pb-[calc(1rem+env(safe-area-inset-bottom))]'">
                     <div class="wet-glass rounded-[26px] h-[52px] p-1 px-2 flex items-center gap-1.5 w-full">
                         <!-- 左侧图标：加 input-icon 类以实现深浅模式反色 -->
                         <button type="button" class="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors">
                             <img src="./assets/images/icon-sound.png" class="input-icon w-6 h-6 object-contain">
                         </button>
 
-                        <!-- 输入框：加 input-text 与 text-bubble 类以实现文字与占位符深浅模式自适应 -->
-                        <textarea rows="1" x-model="messageText" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="input-text flex-1 min-w-0 bg-transparent py-2 px-1 text-[16px] leading-snug text-bubble outline-none resize-none max-h-[38px] overflow-y-auto"></textarea>
+                        <!-- 输入框：点击或聚焦时自动收起工具栏，实现与系统键盘互斥平滑切换 -->
+                        <textarea rows="1" x-model="messageText" @pointerdown="if (showToolsPanel) showToolsPanel = false" @focus="if (showToolsPanel) showToolsPanel = false" @keydown.enter.prevent="sendMessage()" placeholder="Send message..." class="input-text flex-1 min-w-0 bg-transparent py-2 px-1 text-[16px] leading-snug text-bubble outline-none resize-none max-h-[38px] overflow-y-auto"></textarea>
                         
                         <template x-if="!hasText()">
                             <div class="flex items-center gap-1 shrink-0">
                                 <button type="button" 
-                                        @pointerdown.prevent="showToolsPanel = !showToolsPanel" 
+                                        @pointerdown.prevent="toggleToolsPanel()" 
                                         class="p-1 rounded-full hover:bg-white/20 touch-none">
                                     <img src="./assets/images/icon-face.png" class="input-icon w-6 h-6 object-contain">
                                 </button>
                                 
                                 <button type="button" 
-                                        @pointerdown.prevent="showToolsPanel = !showToolsPanel;" 
+                                        @pointerdown.prevent="toggleToolsPanel()" 
                                         :class="{'bg-white/30': showToolsPanel}" 
                                         class="p-1 rounded-full hover:bg-white/20 flex items-center justify-center shrink-0 w-8 h-8 touch-none transition-transform active:scale-95">
                                     <img src="./assets/images/icon-plus.png" class="input-icon w-7 h-7 object-contain scale-125">
@@ -814,7 +810,11 @@
       let lastTouch = 0;
       document.addEventListener('touchend', function(e) {
         const now = Date.now();
-        if (now - lastTouch <= 300) e.preventDefault();
+        if (now - lastTouch <= 300) {
+          if (!e.target.closest || !e.target.closest('input, textarea')) {
+            e.preventDefault();
+          }
+        }
         lastTouch = now;
       }, { passive: false });
 

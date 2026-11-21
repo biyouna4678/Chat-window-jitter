@@ -23,9 +23,17 @@
                     this.restoreSettings();
                     this.restoreMessages();
                     this.scrollToBottom();
+                    if (typeof this.initKeyboardViewportFix === 'function') {
+                        this.initKeyboardViewportFix();
+                    }
                     if (typeof this.warmOnlineAssets === 'function') {
                         this.warmOnlineAssets();
                     }
+                    global.addEventListener('pageshow', (e) => {
+                        if (e.persisted) {
+                            this.isLeavingOffline = false;
+                        }
+                    });
 
                     // 2. 自动持久化核心状态变化
                     this.$watch('statusText', () => this.persistSettings());

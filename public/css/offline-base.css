@@ -61,7 +61,11 @@ html {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
-    background-color: #1a1a1a; /* 防白闪兜底色 */
+    background-color: #1a1a1a; /* 仅图片未加载时的防白闪兜底色 */
+    background-image: var(--offline-wallpaper, url('../assets/images/offline-bg.jpg'), url('./assets/images/offline-bg.jpg'), url('/assets/images/offline-bg.jpg'), url('https://i.ibb.co/C3QwNp7x/IMG-9275.jpg'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 body {
@@ -85,7 +89,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-image: url('../assets/images/offline-bg.jpg'), url('./assets/images/offline-bg.jpg'), url('/assets/images/offline-bg.jpg'), url('https://i.ibb.co/C3QwNp7x/IMG-9275.jpg');
+    background-image: var(--offline-wallpaper, url('../assets/images/offline-bg.jpg'), url('./assets/images/offline-bg.jpg'), url('/assets/images/offline-bg.jpg'), url('https://i.ibb.co/C3QwNp7x/IMG-9275.jpg'));
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -102,11 +106,14 @@ body {
     height: 100%;
     overflow: hidden;
     background-color: transparent;
-    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+.main-container.keyboard-open {
+    position: fixed;
+    left: 0;
+    right: 0;
+    flex: none;
 }
 .main-container.is-leaving {
-    opacity: 0;
-    transform: scale(0.975);
     pointer-events: none;
 }
 
@@ -589,6 +596,9 @@ body.mode-chapter .chapter-container {
     z-index: 100;
     position: relative;
 }
+.main-container.keyboard-open .bottom-input-container {
+    padding-bottom: 10px;
+}
 
 .offline-fade-top {
     position: absolute;
@@ -724,11 +734,15 @@ body.mode-chapter .chapter-container {
 
 /* 桌面端大屏居中约束 */
 @media (hover: hover) and (min-width: 600px) {
+    html,
+    body {
+        background-image: none !important;
+        background-color: #e5e7eb !important;
+    }
     body {
         display: flex;
         justify-content: center;
         align-items: center;
-        background: #e5e7eb !important;
     }
     .bg-layer,
     .main-container {

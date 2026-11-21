@@ -15,6 +15,10 @@
     <script>
       (function () {
         try {
+          var bg = localStorage.getItem('chatwindow_v1_offline_wallpaper');
+          if (bg) {
+            document.documentElement.style.setProperty('--offline-wallpaper', JSON.parse(bg));
+          }
           var autoRaw = localStorage.getItem('chatwindow_v1_theme_auto');
           var isAuto = autoRaw === null ? true : JSON.parse(autoRaw);
           var darkRaw = isAuto
@@ -34,18 +38,18 @@
       })();
     </script>
 
-    <link rel="stylesheet" href="./css/offline-base.css?v=28">
-    <link rel="stylesheet" href="./css/offline-components.css?v=28">
-    <link rel="stylesheet" href="./css/liquid-glass.css?v=28">
+    <link rel="stylesheet" href="./css/offline-base.css?v=29">
+    <link rel="stylesheet" href="./css/offline-components.css?v=29">
+    <link rel="stylesheet" href="./css/liquid-glass.css?v=29">
     <style id="user-custom-css"></style>
     <style id="user-statusbar-css"></style>
 
     <!-- 共享存储与线下模块化脚本 -->
-    <script src="./js/storage.js?v=28"></script>
-    <script src="./js/offline-data.js?v=28"></script>
-    <script src="./js/offline-chat.js?v=28"></script>
-    <script src="./js/offline-settings.js?v=28"></script>
-    <script src="./js/offline-app.js?v=28"></script>
+    <script src="./js/storage.js?v=29"></script>
+    <script src="./js/offline-data.js?v=29"></script>
+    <script src="./js/offline-chat.js?v=29"></script>
+    <script src="./js/offline-settings.js?v=29"></script>
+    <script src="./js/offline-app.js?v=29"></script>
 
     <!-- Alpine.js (与线上页同版本 CDN 以复用缓存) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -56,7 +60,8 @@
     :class="{ 'mode-chapter': currentMode === 'chapter', 'multi-select-mode': isMultiSelectMode, 'theme-dark': isDarkMode }"
 >
     <div class="bg-layer" aria-hidden="true"></div>
-    <div class="page-transition-curtain" x-show="isLeavingOffline" x-cloak style="transition: opacity 0.2s ease-out;"></div>
+    <div class="page-transition-curtain" :class="{ 'is-active': isLeavingOffline }" aria-hidden="true"></div>
+    <div class="page-enter-curtain" aria-hidden="true"></div>
 
     <div class="main-container" :class="{ 'is-leaving': isLeavingOffline }">
         <div class="glass-fade-top offline-fade-top" aria-hidden="true"></div>

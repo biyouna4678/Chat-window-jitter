@@ -228,28 +228,47 @@
     position: fixed;
     inset: 0;
     z-index: 9999;
-    background: rgba(242, 244, 248, 0.72);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
-    backdrop-filter: blur(22px) saturate(140%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    background: rgba(246, 248, 252, 0.84);
+    -webkit-backdrop-filter: blur(26px) saturate(145%);
+    backdrop-filter: blur(26px) saturate(145%);
 }
 .theme-dark .page-transition-curtain {
-    background: rgba(18, 18, 20, 0.78);
+    background: rgba(18, 20, 24, 0.88);
+}
+@keyframes pwaCurtainIn {
+    0% { opacity: 0.01; }
+    100% { opacity: 1; }
+}
+.page-transition-curtain.is-active {
+    visibility: visible;
+    pointer-events: auto;
+    animation: pwaCurtainIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-@keyframes pwaPageEnter {
-    0% {
-        opacity: 0;
-        transform: scale(1.018);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
+.page-enter-curtain {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    background: rgba(246, 248, 252, 0.84);
+    -webkit-backdrop-filter: blur(26px) saturate(145%);
+    backdrop-filter: blur(26px) saturate(145%);
 }
-
-html.pwa-nav-entering .pwa-root,
-html.pwa-nav-entering .main-container {
-    animation: pwaPageEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.theme-dark .page-enter-curtain {
+    background: rgba(18, 20, 24, 0.88);
+}
+@keyframes pwaCurtainOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+html.pwa-nav-entering .page-enter-curtain {
+    visibility: visible;
+    animation: pwaCurtainOut 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .online-toast {

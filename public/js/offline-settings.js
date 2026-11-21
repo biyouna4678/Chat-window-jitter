@@ -163,6 +163,7 @@
                 // 恢复自定义壁纸（先于亮度识别恢复，确保采样目标正确）
                 const savedBg = global.ChatStorage.load(global.ChatStorage.KEYS.OFFLINE_WALLPAPER, null);
                 if (savedBg) {
+                    document.documentElement.style.setProperty('--offline-wallpaper', savedBg);
                     const layer = document.querySelector('.bg-layer');
                     if (layer) layer.style.backgroundImage = savedBg;
                 }
@@ -502,6 +503,7 @@
                             this.theaterHtml = data.theaterHtml;
                         }
                         if (data.background && data.background !== 'none') {
+                            document.documentElement.style.setProperty('--offline-wallpaper', data.background);
                             const layer = document.querySelector('.bg-layer');
                             if (layer) layer.style.backgroundImage = data.background;
                             if (global.ChatStorage) {
@@ -529,6 +531,7 @@
                     if (global.ChatStorage && typeof global.ChatStorage.processWallpaperFile === 'function') {
                         global.ChatStorage.processWallpaperFile(file, ({ dataUrl, isDark }) => {
                             const bgVal = `url('${dataUrl}')`;
+                            document.documentElement.style.setProperty('--offline-wallpaper', bgVal);
                             const layer = document.querySelector('.bg-layer');
                             if (layer) layer.style.backgroundImage = bgVal;
                             global.ChatStorage.save(global.ChatStorage.KEYS.OFFLINE_WALLPAPER, bgVal);
@@ -547,6 +550,7 @@
                         const reader = new FileReader();
                         reader.onload = (e) => {
                             const bgVal = `url('${e.target.result}')`;
+                            document.documentElement.style.setProperty('--offline-wallpaper', bgVal);
                             const layer = document.querySelector('.bg-layer');
                             if (layer) layer.style.backgroundImage = bgVal;
                             this.showToast('壁纸替换成功');

@@ -72,7 +72,14 @@ document.addEventListener('alpine:init', () => {
             }
 
             this.scrollToBottom();
+            this.initKeyboardViewportFix();
             this.warmOfflineAssets();
+
+            window.addEventListener('pageshow', (e) => {
+                if (e.persisted) {
+                    this.isTransitioningOffline = false;
+                }
+            });
         },
 
         showOnlineToast(msg) {
@@ -90,7 +97,7 @@ document.addEventListener('alpine:init', () => {
                 ? window.ChatStorage.extractUrlsFromBg(savedBg)
                 : ['./assets/images/bg.jpg', '/assets/images/bg.jpg', 'https://i.ibb.co/RTjD5DMN/IMG-9263.jpg'];
 
-            window.ChatStorage.detectBackgroundDarkness(document.body, fallbackUrls, (res) => {
+            window.ChatStorage.detectBackgroundDarkness(document.documentElement, fallbackUrls, (res) => {
                 if (res && res.isDark !== null && this.autoThemeByWallpaper) {
                     this.isDarkMode = res.isDark;
                     window.ChatStorage.applyDarkMode(this.isDarkMode, 'online');
@@ -171,12 +178,12 @@ document.addEventListener('alpine:init', () => {
             const runWarm = () => {
                 const assets = [
                     './offline.html',
-                    './css/offline-base.css?v=28',
-                    './css/offline-components.css?v=28',
-                    './js/offline-data.js?v=28',
-                    './js/offline-chat.js?v=28',
-                    './js/offline-settings.js?v=28',
-                    './js/offline-app.js?v=28'
+                    './css/offline-base.css?v=29',
+                    './css/offline-components.css?v=29',
+                    './js/offline-data.js?v=29',
+                    './js/offline-chat.js?v=29',
+                    './js/offline-settings.js?v=29',
+                    './js/offline-app.js?v=29'
                 ];
                 assets.forEach(url => {
                     fetch(url, { credentials: 'same-origin' }).catch(() => {});
@@ -203,21 +210,95 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        toggleToolsPanel() {
+            this.showToolsPanel = !this.showToolsPanel;
+            if (this.showToolsPanel) {
+                const activeEl = document.activeElement;
+                if (activeEl && typeof activeEl.blur === 'function' && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
+                    activeEl.blur();
+                }
+                this.scrollToBottom();
+            }
+        },
+
+        initKeyboardViewportFix() {
+            const rootEl = document.querySelector('.pwa-root');
+            if (!rootEl) return;
+
+            const syncViewport = () => {
+                const isDesktop = window.matchMedia && window.matchMedia('(hover: hover) and (min-width: 600px)').matches;
+                if (isDesktop || !window.visualViewport) {
+                    rootEl.classList.remove('keyboard-open');
+                    rootEl.style.top = '';
+                    rootEl.style.height = '';
+                    rootEl.style.bottom = '';
+                    return;
+                }
+
+                const vv = window.visualViewport;
+                const keyboardHeight = window.innerHeight - vv.height;
+
+                if (keyboardHeight > 100) {
+                    if (window.scrollY !== 0 || window.scrollX !== 0) {
+                        window.scrollTo(0, 0);
+                    }
+                    rootEl.classList.add('keyboard-open');
+                    rootEl.style.top = `${Math.max(0, Math.floor(vv.offsetTop))}px`;
+                    rootEl.style.height = `${Math.ceil(vv.height)}px`;
+                    rootEl.style.bottom = 'auto';
+                    this.scrollToBottom();
+                } else {
+                    rootEl.classList.remove('keyboard-open');
+                    rootEl.style.top = '';
+                    rootEl.style.height = '';
+                    rootEl.style.bottom = '';
+                    if (window.scrollY !== 0 || window.scrollX !== 0) {
+                        window.scrollTo(0, 0);
+                    }
+                }
+            };
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', syncViewport);
+                window.visualViewport.addEventListener('scroll', syncViewport);
+            }
+            window.addEventListener('scroll', () => {
+                if (window.scrollY !== 0 || window.scrollX !== 0) {
+                    window.scrollTo(0, 0);
+                }
+            }, { passive: true });
+            rootEl.addEventListener('focusin', () => {
+                requestAnimationFrame(syncViewport);
+                setTimeout(syncViewport, 80);
+                setTimeout(syncViewport, 280);
+            });
+            rootEl.addEventListener('focusout', () => {
+                setTimeout(syncViewport, 60);
+                setTimeout(syncViewport, 260);
+            });
+        },
+
         enterOfflineMode() {
             if (this.isTransitioningOffline) return;
-            // 关键优化：不收起 showToolsPanel，防止输入框与布局发生跳变和重排
+            const activeEl = document.activeElement;
+            if (activeEl && typeof activeEl.blur === 'function' && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
+                activeEl.blur();
+            }
+            // 不收起 showToolsPanel，防止输入框与布局发生跳变和重排
             this.isTransitioningOffline = true;
 
             requestAnimationFrame(() => {
-                setTimeout(() => {
-                    if (window.ChatStorage) {
-                        window.ChatStorage.syncOnlineContext(this.messages);
-                    }
-                    try {
-                        sessionStorage.setItem('chatwindow_nav_from', 'online');
-                    } catch (_) {}
-                    window.location.assign('./offline.html');
-                }, 180);
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        if (window.ChatStorage) {
+                            window.ChatStorage.syncOnlineContext(this.messages);
+                        }
+                        try {
+                            sessionStorage.setItem('chatwindow_nav_from', 'online');
+                        } catch (_) {}
+                        window.location.assign('./offline.html');
+                    }, 260);
+                });
             });
         },
 
