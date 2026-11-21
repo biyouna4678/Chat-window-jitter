@@ -69,12 +69,12 @@
                 const runWarm = () => {
                     const assets = [
                         './index.html',
-                        './css/style.css?v=29',
-                        './js/chat.js?v=29',
-                        './js/call.js?v=29',
-                        './js/map.js?v=29',
-                        './js/transfer.js?v=29',
-                        './js/jelly.js?v=29'
+                        './css/style.css?v=30',
+                        './js/chat.js?v=30',
+                        './js/call.js?v=30',
+                        './js/map.js?v=30',
+                        './js/transfer.js?v=30',
+                        './js/jelly.js?v=30'
                     ];
                     assets.forEach(url => {
                         fetch(url, { credentials: 'same-origin' }).catch(() => {});
@@ -104,53 +104,39 @@
                 const mainEl = document.querySelector('.main-container');
                 if (!mainEl) return;
 
-                const syncViewport = () => {
+                let wasKeyboardOpen = false;
+
+                const syncKeyboardClass = () => {
                     const isDesktop = global.matchMedia && global.matchMedia('(hover: hover) and (min-width: 600px)').matches;
                     if (isDesktop || !global.visualViewport) {
                         mainEl.classList.remove('keyboard-open');
-                        mainEl.style.top = '';
-                        mainEl.style.height = '';
+                        wasKeyboardOpen = false;
                         return;
                     }
 
                     const vv = global.visualViewport;
                     const keyboardHeight = global.innerHeight - vv.height;
+                    const isOpen = keyboardHeight > 100;
 
-                    if (keyboardHeight > 100) {
-                        if (global.scrollY !== 0 || global.scrollX !== 0) {
-                            global.scrollTo(0, 0);
-                        }
+                    if (isOpen) {
+                        wasKeyboardOpen = true;
                         mainEl.classList.add('keyboard-open');
-                        mainEl.style.top = `${Math.max(0, Math.floor(vv.offsetTop))}px`;
-                        mainEl.style.height = `${Math.ceil(vv.height)}px`;
-                        this.scrollToBottom();
                     } else {
                         mainEl.classList.remove('keyboard-open');
-                        mainEl.style.top = '';
-                        mainEl.style.height = '';
-                        if (global.scrollY !== 0 || global.scrollX !== 0) {
+                        if (wasKeyboardOpen && (global.scrollY !== 0 || global.scrollX !== 0)) {
+                            wasKeyboardOpen = false;
                             global.scrollTo(0, 0);
+                        } else if (keyboardHeight <= 20) {
+                            wasKeyboardOpen = false;
                         }
                     }
                 };
 
                 if (global.visualViewport) {
-                    global.visualViewport.addEventListener('resize', syncViewport);
-                    global.visualViewport.addEventListener('scroll', syncViewport);
+                    global.visualViewport.addEventListener('resize', syncKeyboardClass);
                 }
-                global.addEventListener('scroll', () => {
-                    if (global.scrollY !== 0 || global.scrollX !== 0) {
-                        global.scrollTo(0, 0);
-                    }
-                }, { passive: true });
-                mainEl.addEventListener('focusin', () => {
-                    requestAnimationFrame(syncViewport);
-                    setTimeout(syncViewport, 80);
-                    setTimeout(syncViewport, 280);
-                });
                 mainEl.addEventListener('focusout', () => {
-                    setTimeout(syncViewport, 60);
-                    setTimeout(syncViewport, 260);
+                    setTimeout(syncKeyboardClass, 320);
                 });
             },
 

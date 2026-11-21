@@ -107,12 +107,6 @@ body {
     overflow: hidden;
     background-color: transparent;
 }
-.main-container.keyboard-open {
-    position: fixed;
-    left: 0;
-    right: 0;
-    flex: none;
-}
 .main-container.is-leaving {
     pointer-events: none;
 }
@@ -595,9 +589,10 @@ body.mode-chapter .chapter-container {
     flex-shrink: 0;
     z-index: 100;
     position: relative;
+    transition: padding-bottom 0.2s ease-out;
 }
 .main-container.keyboard-open .bottom-input-container {
-    padding-bottom: 10px;
+    padding-bottom: 24px;
 }
 
 .offline-fade-top {

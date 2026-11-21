@@ -178,12 +178,12 @@ document.addEventListener('alpine:init', () => {
             const runWarm = () => {
                 const assets = [
                     './offline.html',
-                    './css/offline-base.css?v=29',
-                    './css/offline-components.css?v=29',
-                    './js/offline-data.js?v=29',
-                    './js/offline-chat.js?v=29',
-                    './js/offline-settings.js?v=29',
-                    './js/offline-app.js?v=29'
+                    './css/offline-base.css?v=30',
+                    './css/offline-components.css?v=30',
+                    './js/offline-data.js?v=30',
+                    './js/offline-chat.js?v=30',
+                    './js/offline-settings.js?v=30',
+                    './js/offline-app.js?v=30'
                 ];
                 assets.forEach(url => {
                     fetch(url, { credentials: 'same-origin' }).catch(() => {});
@@ -225,56 +225,40 @@ document.addEventListener('alpine:init', () => {
             const rootEl = document.querySelector('.pwa-root');
             if (!rootEl) return;
 
-            const syncViewport = () => {
+            let wasKeyboardOpen = false;
+
+            const syncKeyboardClass = () => {
                 const isDesktop = window.matchMedia && window.matchMedia('(hover: hover) and (min-width: 600px)').matches;
                 if (isDesktop || !window.visualViewport) {
                     rootEl.classList.remove('keyboard-open');
-                    rootEl.style.top = '';
-                    rootEl.style.height = '';
-                    rootEl.style.bottom = '';
+                    wasKeyboardOpen = false;
                     return;
                 }
 
                 const vv = window.visualViewport;
                 const keyboardHeight = window.innerHeight - vv.height;
+                const isOpen = keyboardHeight > 100;
 
-                if (keyboardHeight > 100) {
-                    if (window.scrollY !== 0 || window.scrollX !== 0) {
-                        window.scrollTo(0, 0);
-                    }
+                if (isOpen) {
+                    wasKeyboardOpen = true;
                     rootEl.classList.add('keyboard-open');
-                    rootEl.style.top = `${Math.max(0, Math.floor(vv.offsetTop))}px`;
-                    rootEl.style.height = `${Math.ceil(vv.height)}px`;
-                    rootEl.style.bottom = 'auto';
-                    this.scrollToBottom();
                 } else {
                     rootEl.classList.remove('keyboard-open');
-                    rootEl.style.top = '';
-                    rootEl.style.height = '';
-                    rootEl.style.bottom = '';
-                    if (window.scrollY !== 0 || window.scrollX !== 0) {
+                    // 仅在键盘彻底收起后轻柔复位残留滚动偏移，绝不在呼出键盘动画途中抢占视口
+                    if (wasKeyboardOpen && (window.scrollY !== 0 || window.scrollX !== 0)) {
+                        wasKeyboardOpen = false;
                         window.scrollTo(0, 0);
+                    } else if (keyboardHeight <= 20) {
+                        wasKeyboardOpen = false;
                     }
                 }
             };
 
             if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', syncViewport);
-                window.visualViewport.addEventListener('scroll', syncViewport);
+                window.visualViewport.addEventListener('resize', syncKeyboardClass);
             }
-            window.addEventListener('scroll', () => {
-                if (window.scrollY !== 0 || window.scrollX !== 0) {
-                    window.scrollTo(0, 0);
-                }
-            }, { passive: true });
-            rootEl.addEventListener('focusin', () => {
-                requestAnimationFrame(syncViewport);
-                setTimeout(syncViewport, 80);
-                setTimeout(syncViewport, 280);
-            });
             rootEl.addEventListener('focusout', () => {
-                setTimeout(syncViewport, 60);
-                setTimeout(syncViewport, 260);
+                setTimeout(syncKeyboardClass, 320);
             });
         },
 

@@ -235,8 +235,11 @@ body {
     overflow: hidden;
     background-color: transparent;
 }
+.chat-input-dock {
+    transition: padding-bottom 0.2s ease-out;
+}
 .pwa-root.keyboard-open .chat-input-dock {
-    padding-bottom: 10px !important;
+    padding-bottom: 24px !important;
 }
 
 /* 顶部安全区（刘海/灵动岛） */
